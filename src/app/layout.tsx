@@ -12,9 +12,9 @@ import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "rbrgs/server/uploadthing";
 
 export const metadata: Metadata = {
-  title: "Candidates 2025",
+  title: "@Home Dashboard 2026",
   description:
-    "Candidates 2025 by RoBorregos, ITESM's biggest robotics competition",
+    "RoboCup@Home 2026 Scorekeeper by RoBorregos",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
