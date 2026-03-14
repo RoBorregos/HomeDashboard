@@ -77,16 +77,18 @@ model User {
   interviewerId    String?
   role             Role             @default(UNASSIGNED)
   teamId           String?
-  isStaff          Boolean          @default(false)
-  accounts         Account[]
-  judgedChallengeA ChallengeA[]
-  judgedChallengeB ChallengeB[]
-  judgedChallengeC ChallengeC[]
-  sessions         Session[]
-  team             Team?            @relation(fields: [teamId], references: [id])
-  teamRequests     TeamRequest?
-  interviewer      Interviewer?     @relation(fields: [interviewerId], references: [id])
-  unavailabilities Unavailability[]
+  isStaff            Boolean            @default(false)
+  accounts           Account[]
+  judgedChallengeA   ChallengeA[]
+  judgedChallengeB   ChallengeB[]
+  judgedChallengeC   ChallengeC[]
+  sessions           Session[]
+  team               Team?              @relation(fields: [teamId], references: [id])
+  teamRequests       TeamRequest?
+  interviewer        Interviewer?       @relation(fields: [interviewerId], references: [id])
+  unavailabilities   Unavailability[]
+  taskScores         TaskScore[]
+  inspectionResults  InspectionResult[]
 }
 
 model VerificationToken {
@@ -241,4 +243,26 @@ enum Pattern {
   E4
   FINISH
   BONUS
+}
+
+model TaskScore {
+  id         String   @id @default(cuid())
+  taskId     String
+  judgeId    String
+  judge      User     @relation(fields: [judgeId], references: [id])
+  scoreData  Json
+  totalScore Int
+  savedAt    DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([taskId, judgeId])
+}
+
+model InspectionResult {
+  id        String   @id @default(cuid())
+  judgeId   String   @unique
+  judge     User     @relation(fields: [judgeId], references: [id])
+  checklist Json
+  passed    Boolean
+  updatedAt DateTime @updatedAt
 }
