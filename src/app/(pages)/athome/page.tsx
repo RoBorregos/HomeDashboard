@@ -20,23 +20,7 @@ export default function AtHomeDashboard() {
     enabled: !!session.data?.user,
   });
 
-  if (
-    session.data?.user?.role !== Role.ADMIN &&
-    session.data?.user?.role !== Role.JUDGE
-  ) {
-    return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white">
-        <div className="md:pb-20">
-          <Header title="@Home" subtitle="" />
-        </div>
-        <div className="p-2">
-          <h1 className="mb-5 text-center text-4xl">
-            You don&apos;t have permission to access this page.
-          </h1>
-        </div>
-      </main>
-    );
-  }
+  // No role checks - page is public
 
   const myScoreMap = new Map(
     (myScores ?? []).map((s) => [s.taskId, s]),

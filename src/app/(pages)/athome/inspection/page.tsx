@@ -60,17 +60,7 @@ export default function InspectionPage() {
     setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  if (
-    session.data?.user?.role !== Role.ADMIN &&
-    session.data?.user?.role !== Role.JUDGE
-  ) {
-    return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white">
-        <Header title="Inspection" subtitle="" />
-        <p className="text-center text-xl mt-8">No permission.</p>
-      </main>
-    );
-  }
+  // No role checks - page is public
 
   return (
     <main className="mt-[4rem] min-h-screen bg-black text-white">

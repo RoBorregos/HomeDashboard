@@ -24,12 +24,12 @@ export default async function Navbar() {
       <div className="ml-10 hidden w-full items-center justify-start gap-x-10 text-white lg:flex xl:text-xl">
         <Link href="/athome">Dashboard</Link>
         <Link href="/athome/results">Results</Link>
-        {canJudge && <Link href="/athome/inspection">Inspection</Link>}
-        {session?.user.role === Role.ADMIN && <Link href="/admin">Admin</Link>}
+        <Link href="/athome/inspection">Inspection</Link>
+        <Link href="/admin">Admin</Link>
         <Link href="https://www.roborregos.com">About us</Link>
       </div>
       <div className="hidden lg:block">
-        <SignInButton session={session} />
+        {/* SignInButton removed as per request */}
       </div>
       <NavDropdown session={session} />
     </nav>
