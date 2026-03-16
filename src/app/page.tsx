@@ -15,7 +15,6 @@ import ball from "../../public/images/ball.jpg";
 import maze from "../../public/images/maze.jpg";
 import line from "../../public/images/line.jpg";
 import Footer from "./_components/footer";
-import EventTimeline from "./_components/timeline";
 import ImageFade from "./_components/imageFade";
 
 export default async function Home() {
@@ -121,8 +120,6 @@ export default async function Home() {
             </p>
           </div>
         </section>
-
-        <EventTimeline />
 
         <div className="mx-[10vw] mt-10 text-center font-archivo text-[1rem] text-white lg:mx-[10rem] lg:text-[1.5rem]">
           <span className="text-[2rem] font-bold">Thanks to our </span>
