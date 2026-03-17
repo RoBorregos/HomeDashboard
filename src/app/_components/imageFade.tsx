@@ -5,13 +5,16 @@ import Image from "next/image";
 
 export default function ImageFade({ className = "" }) {
   const slides = [
-    "/images/teamPhotos/cand25.JPG",
-    "/images/teamPhotos/cand25-3rd.JPG",
-    "/images/teamPhotos/cand25-2nd.JPG",
-    "/images/teamPhotos/cand25-1st.JPG",
+    "/images/teamPhotos/IMG_8203.JPG",
+    "/images/teamPhotos/IMG_8258.JPG",
+    "/images/teamPhotos/IMG_8284.JPG",
+    "/images/teamPhotos/IMG_8415.JPG",
+    "/images/teamPhotos/IMG_8181.JPG",
+    "/images/teamPhotos/IMG_8020.JPG" 
+
   ];
   for (let i = 1; i <= 18; i++) {
-    slides.push(`/images/teamPhotos/cand25-${i}.JPG`);
+    slides.push(`/images/teamPhotos/IMG_8203${ i}.JPG`);
   }
 
   const [currentSlide, setCurrentSlide] = useState(0);
