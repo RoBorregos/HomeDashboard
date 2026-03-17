@@ -24,33 +24,20 @@ export default function NavDropdown({ session }: { session: Session | null }) {
           side="top"
         >
           <SheetClose asChild>
-            <Link href="/" className="w-full text-lg">
-              Home
+            <Link href="/athome" className="w-full text-lg">
+              Dashboard
             </Link>
           </SheetClose>
           <SheetClose asChild>
-            <Link href="/scoreboard" className="w-full text-lg">
-              Scoreboard
+            <Link href="/athome/results" className="w-full text-lg">
+              Results
             </Link>
           </SheetClose>
           <SheetClose asChild>
-            <Link href="/schedule" className="w-full text-lg">
-              Schedule
+            <Link href="/athome/inspection" className="w-full text-lg">
+              Inspection
             </Link>
           </SheetClose>
-          <SheetClose asChild>
-            <Link href="/team" className="w-full text-lg">
-              Team
-            </Link>
-          </SheetClose>
-          {(session?.user.role === Role.ADMIN ||
-            session?.user.role === Role.JUDGE) && (
-            <SheetClose asChild>
-              <Link href="/judge" className="w-full text-lg">
-                Judge
-              </Link>
-            </SheetClose>
-          )}
           {session?.user.role === Role.ADMIN && (
             <SheetClose asChild>
               <Link href="/admin" className="w-full text-lg">
@@ -59,16 +46,10 @@ export default function NavDropdown({ session }: { session: Session | null }) {
             </SheetClose>
           )}
           <SheetClose asChild>
-            <Link href="/editions" className="w-full text-lg">
-              Past Editions
-            </Link>
-          </SheetClose>
-          <SheetClose asChild>
             <Link href="https://www.roborregos.com" className="w-full text-lg">
-              About Us
+              About us
             </Link>
           </SheetClose>
-          <SignInButton session={session} />
         </SheetContent>
       </Sheet>
     </div>
