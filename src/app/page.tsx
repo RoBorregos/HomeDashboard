@@ -1,34 +1,19 @@
 import Image from "next/image";
 import { HydrateClient } from "rbrgs/trpc/server";
-import capitalOne from "../../public/images/sponsors/CapitalOne.png";
-import stanser from "../../public/images/sponsors/Stanser.png";
+import tecdemonterrey from "../../public/images/sponsors/tecdemonterrey.png";
+import factory3d from "../../public/images/sponsors/3dfactory.png";
+import altium from "../../public/images/sponsors/altium.png";
 import github from "../../public/images/sponsors/github.png";
 import robologo from "../../public/images/white-logo.png";
-import coffeeCart from "../../public/images/sponsors/coffeeCart.png";
-import peckers from "../../public/images/sponsors/peckers.png";
-import tapiocaHouse from "../../public/images/sponsors/tapiocaHouse.jpg";
-import kube from "../../public/images/sponsors/kube.jpg";
-import digikey from "../../public/images/sponsors/DigiKey.png";
-import kiko from "../../public/images/sponsors/kiko.jpg";
-import heppy from "../../public/images/sponsors/heppy.png";
-import ball from "../../public/images/ball.jpg";
-import maze from "../../public/images/maze.jpg";
-import line from "../../public/images/line.jpg";
 import Footer from "./_components/footer";
 import ImageFade from "./_components/imageFade";
 
 export default async function Home() {
   const sponsors = [
-    capitalOne,
-    stanser,
+    tecdemonterrey,
+    factory3d,
+    altium,
     github,
-    digikey,
-    tapiocaHouse,
-    coffeeCart,
-    peckers,
-    kube,
-    kiko,
-    heppy,
   ];
 
   return (
@@ -98,7 +83,7 @@ export default async function Home() {
           </span>
         </div>
 
-        <section className="mt-[3rem] grid w-full grid-cols-2 gap-5 bg-white px-[5vw] py-5 lg:grid-cols-5 lg:px-[5rem]">
+        <section className="mt-[3rem] grid w-full grid-cols-2 gap-5 bg-white px-[5vw] py-5 lg:grid-cols-4 lg:px-[5rem]">
           {sponsors.map((sponsor, index) => (
             <div key={index} className="flex items-center justify-center">
               <Image
