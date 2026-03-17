@@ -122,18 +122,8 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
   .use(({ ctx, next }) => {
-    if (!ctx.session || !ctx.session.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
-    return next({
-      ctx: {
-        // infers the `session` as non-nullable
-        session: {
-          ...ctx.session,
-          user: { ...ctx.session.user, role: ctx.session.user.role },
-        },
-      },
-    });
+    // Allow all requests through, even without a session
+    return next({ ctx });
   });
 
 export const roleProtectionMiddleware = (_roles: Role[]) =>

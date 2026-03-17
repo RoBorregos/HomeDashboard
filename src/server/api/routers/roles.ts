@@ -11,7 +11,7 @@ import { Prisma, Role } from "@prisma/client";
 export const rolesRouter = createTRPCRouter({
   getRole: protectedProcedure.query(async ({ ctx }) => {
     console.log("getRole", ctx.session);
-    return ctx.session.user.role;
+    return ctx.session?.user?.role ?? Role.UNASSIGNED;
   }),
   getAdminProtectedMessage: protectedProcedure
     .use(roleProtectionMiddleware([Role.ADMIN]))

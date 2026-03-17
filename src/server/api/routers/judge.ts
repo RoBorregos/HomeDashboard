@@ -52,7 +52,7 @@ export const judgeRouter = createTRPCRouter({
           lackOfProgress: input.genericFormSchema.lackOfProgress,
           roundId: input.genericFormSchema.roundId,
           teamId: input.genericFormSchema.teamId,
-          judgeID: ctx.session.user.id,
+          judgeID: ctx.session?.user?.id ?? "anonymous",
           points: points,
         },
       });
@@ -73,7 +73,7 @@ export const judgeRouter = createTRPCRouter({
           points: points,
           roundTimeSeconds: input.genericFormSchema.roundTimeSeconds,
           teamId: input.genericFormSchema.teamId,
-          judgeID: ctx.session.user.id,
+          judgeID: ctx.session?.user?.id ?? "anonymous",
           roundId: input.genericFormSchema.roundId,
         },
       });
@@ -110,7 +110,7 @@ export const judgeRouter = createTRPCRouter({
           points: points,
           roundTimeSeconds: input.genericFormSchema.roundTimeSeconds,
           teamId: input.genericFormSchema.teamId,
-          judgeID: ctx.session.user.id,
+          judgeID: ctx.session?.user?.id ?? "anonymous",
           roundId: input.genericFormSchema.roundId,
         },
       });

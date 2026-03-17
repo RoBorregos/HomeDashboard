@@ -37,19 +37,19 @@ export const teamRouter = createTRPCRouter({
 
       // Clear any pending team request from this user
       await ctx.db.teamRequest.deleteMany({
-        where: { userId: ctx.session.user.id },
+        where: { userId: ctx.session?.user?.id ?? "anonymous" },
       });
 
       // Assign user to the team and set role/interview area
 
       await ctx.db.user.update({
-        where: { id: ctx.session.user.id },
+        where: { id: ctx.session?.user?.id ?? "anonymous" },
         data: {
           teamId: team.id,
           role:
-            ctx.session.user.role === Role.ADMIN ||
-            ctx.session.user.role === Role.JUDGE
-              ? ctx.session.user.role
+            ctx.session?.user?.role === Role.ADMIN ||
+            ctx.session?.user?.role === Role.JUDGE
+              ? ctx.session?.user?.role
               : Role.CONTESTANT,
           ...(input.userArea ? { interviewArea: input.userArea } : {}),
         },
@@ -60,7 +60,7 @@ export const teamRouter = createTRPCRouter({
   getTeam: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findFirst({
       where: {
-        id: ctx.session.user.id,
+        id: ctx.session?.user?.id ?? "anonymous",
       },
     });
 
@@ -136,7 +136,7 @@ export const teamRouter = createTRPCRouter({
   }),
   getCurrentUser: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.user.findUnique({
-      where: { id: ctx.session.user.id },
+      where: { id: ctx.session?.user?.id ?? "anonymous" },
       include: {
         team: true,
       },
@@ -159,7 +159,7 @@ export const teamRouter = createTRPCRouter({
   getUserRequest: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.teamRequest.findFirst({
       where: {
-        userId: ctx.session.user.id,
+        userId: ctx.session?.user?.id ?? "anonymous",
       },
     });
   }),
@@ -174,7 +174,7 @@ export const teamRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.user.findUnique({
-        where: { id: ctx.session.user.id },
+        where: { id: ctx.session?.user?.id ?? "anonymous" },
         include: { team: true },
       });
 
@@ -195,13 +195,13 @@ export const teamRouter = createTRPCRouter({
       }
 
       const existingRequest = await ctx.db.teamRequest.findFirst({
-        where: { userId: ctx.session.user.id },
+        where: { userId: ctx.session?.user?.id ?? "anonymous" },
       });
 
       if (existingRequest) {
         // Update both the team request and the user's area
         await ctx.db.user.update({
-          where: { id: ctx.session.user.id },
+          where: { id: ctx.session?.user?.id ?? "anonymous" },
           data: { interviewArea: input.userArea },
         });
 
@@ -216,13 +216,13 @@ export const teamRouter = createTRPCRouter({
       } else {
         // Update the user's area and create the request
         await ctx.db.user.update({
-          where: { id: ctx.session.user.id },
+          where: { id: ctx.session?.user?.id ?? "anonymous" },
           data: { interviewArea: input.userArea },
         });
 
         return ctx.db.teamRequest.create({
           data: {
-            userId: ctx.session.user.id,
+            userId: ctx.session?.user?.id ?? "anonymous",
             requestedTeam: input.requestedTeam,
             message: input.message,
           },
@@ -232,7 +232,7 @@ export const teamRouter = createTRPCRouter({
 
   cancelTeamRequest: protectedProcedure.mutation(async ({ ctx }) => {
     const existingRequest = await ctx.db.teamRequest.findFirst({
-      where: { userId: ctx.session.user.id },
+      where: { userId: ctx.session?.user?.id ?? "anonymous" },
     });
 
     if (!existingRequest) {
@@ -251,7 +251,7 @@ export const teamRouter = createTRPCRouter({
 
   leaveTeam: protectedProcedure.mutation(async ({ ctx }) => {
     const teamRequest = await ctx.db.teamRequest.findFirst({
-      where: { userId: ctx.session.user.id },
+      where: { userId: ctx.session?.user?.id ?? "anonymous" },
     });
 
     if (teamRequest) {
@@ -261,13 +261,13 @@ export const teamRouter = createTRPCRouter({
     }
 
     await ctx.db.user.update({
-      where: { id: ctx.session.user.id },
+      where: { id: ctx.session?.user?.id ?? "anonymous" },
       data: {
         teamId: null,
         role:
-          ctx.session.user.role === Role.CONTESTANT
+          ctx.session?.user?.role === Role.CONTESTANT
             ? Role.UNASSIGNED
-            : ctx.session.user.role,
+            : ctx.session?.user?.role,
       },
     });
 
@@ -306,7 +306,7 @@ export const teamRouter = createTRPCRouter({
   // Requests moderation by team members
   getPendingRequestsForMyTeam: protectedProcedure.query(async ({ ctx }) => {
     const me = await ctx.db.user.findUnique({
-      where: { id: ctx.session.user.id },
+      where: { id: ctx.session?.user?.id ?? "anonymous" },
       include: { team: true },
     });
 
@@ -330,7 +330,7 @@ export const teamRouter = createTRPCRouter({
     .input(z.object({ requestId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const me = await ctx.db.user.findUnique({
-        where: { id: ctx.session.user.id },
+        where: { id: ctx.session?.user?.id ?? "anonymous" },
         include: { team: true },
       });
 
@@ -398,7 +398,7 @@ export const teamRouter = createTRPCRouter({
     .input(z.object({ requestId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const me = await ctx.db.user.findUnique({
-        where: { id: ctx.session.user.id },
+        where: { id: ctx.session?.user?.id ?? "anonymous" },
         include: { team: true },
       });
       if (!me?.team) {

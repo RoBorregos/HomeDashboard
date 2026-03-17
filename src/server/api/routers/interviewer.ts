@@ -2,7 +2,7 @@ import { protectedProcedure, createTRPCRouter } from "../trpc";
 
 export const interviewerRouter = createTRPCRouter({
   getMyInterviews: protectedProcedure.query(async ({ ctx }) => {
-    const email = ctx.session.user?.email;
+    const email = ctx.session?.user?.email;
     if (!email) return [];
 
     const interviewer = await ctx.db.interviewer.findUnique({
@@ -28,7 +28,7 @@ export const interviewerRouter = createTRPCRouter({
     return users;
   }),
   isInterviewer: protectedProcedure.query(async ({ ctx }) => {
-    const email = ctx.session.user?.email;
+    const email = ctx.session?.user?.email;
     if (!email) return [];
 
     const interviewer = await ctx.db.interviewer.findUnique({
