@@ -28,7 +28,7 @@ export default function AtHomeDashboard() {
 
   const tasksCompleted = TASKS.filter((t) => myScoreMap.has(t.id)).length;
   const totalBestScore = Object.values(bestPerTask ?? {}).reduce(
-    (sum: number, v) => sum + (v as number),
+    (sum: number, v) => sum + v,
     0,
   );
 
@@ -108,7 +108,7 @@ export default function AtHomeDashboard() {
           {/* Task Cards */}
           {TASKS.map((task) => {
             const saved = myScoreMap.get(task.id);
-            const best = (bestPerTask ?? {})[task.id] as number | undefined;
+            const best = bestPerTask?.[task.id];
             return (
               <Link key={task.id} href={`/athome/${task.id}`}>
                 <div className="group cursor-pointer rounded-xl border border-gray-700 bg-gray-900/50 p-5 transition-all hover:border-roboblue hover:shadow-lg hover:shadow-roboblue/10">

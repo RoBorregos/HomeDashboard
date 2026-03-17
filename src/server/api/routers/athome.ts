@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import {
   createTRPCRouter,
   judgeProcedure,
@@ -26,11 +27,11 @@ export const athomeRouter = createTRPCRouter({
         create: {
           taskId: input.taskId,
           judgeId: ctx.session.user.id,
-          scoreData: input.scoreData,
+          scoreData: input.scoreData as Prisma.InputJsonValue,
           totalScore: input.totalScore,
         },
         update: {
-          scoreData: input.scoreData,
+          scoreData: input.scoreData as Prisma.InputJsonValue,
           totalScore: input.totalScore,
         },
       });
@@ -77,11 +78,11 @@ export const athomeRouter = createTRPCRouter({
         where: { judgeId: ctx.session.user.id },
         create: {
           judgeId: ctx.session.user.id,
-          checklist: input.checklist,
+          checklist: input.checklist as Prisma.InputJsonValue,
           passed: input.passed,
         },
         update: {
-          checklist: input.checklist,
+          checklist: input.checklist as Prisma.InputJsonValue,
           passed: input.passed,
         },
       });

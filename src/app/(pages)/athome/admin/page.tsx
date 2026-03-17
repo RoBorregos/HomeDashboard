@@ -141,7 +141,7 @@ export default function AtHomeAdminPage() {
                                 : "text-gray-600"
                           }`}
                         >
-                          {score !== undefined ? score : "—"}
+                          {score ?? "—"}
                         </td>
                       );
                     })}
