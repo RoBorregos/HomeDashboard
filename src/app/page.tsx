@@ -66,28 +66,28 @@ export default async function Home() {
         </div>
 
         <section className="mx-[5vw] mt-[5rem] grid gap-[5rem] text-[1.25rem] lg:mx-[5rem] lg:mt-[10rem] lg:grid-cols-2">
-          <div className="relative rounded-xl bg-gradient-to-tr from-neutral-950 to-neutral-800">
-            <div className="group relative">
-              <div className="absolute top-0 h-[15rem] w-full content-center bg-gradient-to-t from-black to-roboblue bg-clip-text text-center font-anton text-[4rem] text-transparent transition duration-300 group-hover:opacity-0 lg:left-5">
-                SCORING
-              </div>
+          <div className="group flex flex-col gap-4">
+            <h3 className="bg-gradient-to-t from-black to-roboblue bg-clip-text font-anton text-[3rem] text-transparent transition-all duration-300 group-hover:to-blue-400 lg:ml-5 lg:text-[4rem]">
+              SCORING
+            </h3>
+            <div className="relative rounded-xl bg-gradient-to-tr from-neutral-950 to-neutral-800 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-[0_0_30px_rgba(0,119,255,0.2)]">
+              <p className="m-[1rem] p-10 text-justify font-archivo text-white">
+                Perform real-time scoring for all competition tasks.
+                Our specialized interface ensures accurate and efficient data entry for judges.
+              </p>
             </div>
-            <p className="m-[1rem] p-10 text-justify font-archivo text-white">
-              Perform real-time scoring for all competition tasks.
-              Our specialized interface ensures accurate and efficient data entry for judges.
-            </p>
           </div>
 
-          <div className="rounded-xl bg-gradient-to-tr from-neutral-950 to-neutral-800">
-            <div className="group relative">
-              <div className="absolute top-0 h-[15rem] w-full content-center bg-gradient-to-t from-black to-roboblue bg-clip-text text-center font-anton text-[4rem] text-transparent transition duration-300 group-hover:opacity-0 lg:left-5">
-                INSPECTION
-              </div>
+          <div className="group flex flex-col gap-4">
+            <h3 className="bg-gradient-to-t from-black to-roboblue bg-clip-text font-anton text-[3rem] text-transparent transition-all duration-300 group-hover:to-blue-400 lg:ml-5 lg:text-[4rem]">
+              INSPECTION
+            </h3>
+            <div className="rounded-xl bg-gradient-to-tr from-neutral-950 to-neutral-800 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-[0_0_30px_rgba(0,119,255,0.2)]">
+              <p className="m-[1rem] p-10 text-justify font-archivo text-white">
+                Manage the technical inspection process. Keep track of checklist completion
+                and overall robot readiness for the competition.
+              </p>
             </div>
-            <p className="m-[1rem] p-10 text-justify font-archivo text-white">
-              Manage the technical inspection process. Keep track of checklist completion
-              and overall robot readiness for the competition.
-            </p>
           </div>
         </section>
 
