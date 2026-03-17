@@ -99,17 +99,7 @@ export default function TaskScorePage() {
     },
   });
 
-  if (
-    session.data?.user?.role !== Role.ADMIN &&
-    session.data?.user?.role !== Role.JUDGE
-  ) {
-    return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white">
-        <Header title="Score" subtitle="" />
-        <p className="text-center text-xl mt-8">No permission.</p>
-      </main>
-    );
-  }
+  // Removed role-based guard so judges/admins check is not enforced here
 
   if (!task) {
     return (
