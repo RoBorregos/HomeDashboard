@@ -1,10 +1,17 @@
-import { ourFileRouter } from "rbrgs/server/uploadthing";
-import { createRouteHandler } from "uploadthing/next";
+import { type NextRequest, NextResponse } from "next/server";
 
-// Export routes for Next App Router
-export const { GET, POST } = createRouteHandler({
-  router: ourFileRouter,
+const notConfigured = () =>
+  NextResponse.json({ error: "UploadThing not configured" }, { status: 503 });
 
-  // Apply an (optional) custom config:
-  // config: { ... },
-});
+let GET: (req: NextRequest) => Promise<Response> = async () => notConfigured();
+let POST: (req: NextRequest) => Promise<Response> = async () => notConfigured();
+
+if (process.env.UPLOADTHING_TOKEN) {
+  const { ourFileRouter } = await import("rbrgs/server/uploadthing");
+  const { createRouteHandler } = await import("uploadthing/next");
+  const handler = createRouteHandler({ router: ourFileRouter });
+  GET = handler.GET;
+  POST = handler.POST;
+}
+
+export { GET, POST };
