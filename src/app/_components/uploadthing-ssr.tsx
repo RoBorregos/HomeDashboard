@@ -1,15 +1,11 @@
-import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
-import { extractRouterConfig } from "uploadthing/server";
-
-export function UploadThingSSR() {
+export async function UploadThingSSR() {
   if (!process.env.UPLOADTHING_TOKEN) {
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ourFileRouter } = require("rbrgs/server/uploadthing") as {
-    ourFileRouter: Parameters<typeof extractRouterConfig>[0];
-  };
+  const { NextSSRPlugin } = await import("@uploadthing/react/next-ssr-plugin");
+  const { extractRouterConfig } = await import("uploadthing/server");
+  const { ourFileRouter } = await import("rbrgs/server/uploadthing");
 
   return <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />;
 }
