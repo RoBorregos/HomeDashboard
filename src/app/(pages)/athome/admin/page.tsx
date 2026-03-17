@@ -35,8 +35,8 @@ export default function AtHomeAdminPage() {
   for (const s of allScores ?? []) {
     if (!judgeMap.has(s.judgeId)) {
       judgeMap.set(s.judgeId, {
-        name: s.judge.name ?? "Unknown",
-        email: s.judge.email ?? "",
+        name: s.judgeId,
+        email: "",
         scores: new Map(),
       });
     }

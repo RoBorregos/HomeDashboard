@@ -6,6 +6,8 @@ import {
   adminProcedure,
 } from "rbrgs/server/api/trpc";
 
+const ANON_JUDGE_ID = "anonymous";
+
 export const athomeRouter = createTRPCRouter({
   // ── Scores ──────────────────────────────────────────────────
   scoreSave: judgeProcedure
@@ -17,16 +19,17 @@ export const athomeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
       return ctx.db.taskScore.upsert({
         where: {
           taskId_judgeId: {
             taskId: input.taskId,
-            judgeId: ctx.session.user.id,
+            judgeId,
           },
         },
         create: {
           taskId: input.taskId,
-          judgeId: ctx.session.user.id,
+          judgeId,
           scoreData: input.scoreData as Prisma.InputJsonValue,
           totalScore: input.totalScore,
         },
@@ -38,13 +41,13 @@ export const athomeRouter = createTRPCRouter({
     }),
 
   scoreGetMine: judgeProcedure.query(async ({ ctx }) => {
+    const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
     return ctx.db.taskScore.findMany({
-      where: { judgeId: ctx.session.user.id },
+      where: { judgeId },
     });
   }),
 
   scoreGetBestPerTask: judgeProcedure.query(async ({ ctx }) => {
-    // Get all scores, then compute best per task in JS
     const all = await ctx.db.taskScore.findMany({
       select: { taskId: true, totalScore: true },
     });
@@ -58,9 +61,6 @@ export const athomeRouter = createTRPCRouter({
 
   scoreGetAll: adminProcedure.query(async ({ ctx }) => {
     return ctx.db.taskScore.findMany({
-      include: {
-        judge: { select: { id: true, name: true, email: true } },
-      },
       orderBy: { taskId: "asc" },
     });
   }),
@@ -74,10 +74,11 @@ export const athomeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
       return ctx.db.inspectionResult.upsert({
-        where: { judgeId: ctx.session.user.id },
+        where: { judgeId },
         create: {
-          judgeId: ctx.session.user.id,
+          judgeId,
           checklist: input.checklist as Prisma.InputJsonValue,
           passed: input.passed,
         },
@@ -89,26 +90,24 @@ export const athomeRouter = createTRPCRouter({
     }),
 
   inspectionGetMine: judgeProcedure.query(async ({ ctx }) => {
+    const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
     return ctx.db.inspectionResult.findUnique({
-      where: { judgeId: ctx.session.user.id },
+      where: { judgeId },
     });
   }),
 
   inspectionGetAll: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.inspectionResult.findMany({
-      include: {
-        judge: { select: { id: true, name: true, email: true } },
-      },
-    });
+    return ctx.db.inspectionResult.findMany();
   }),
 
   // ── Reset ───────────────────────────────────────────────────
   resetAll: judgeProcedure.mutation(async ({ ctx }) => {
+    const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
     await ctx.db.taskScore.deleteMany({
-      where: { judgeId: ctx.session.user.id },
+      where: { judgeId },
     });
     await ctx.db.inspectionResult.deleteMany({
-      where: { judgeId: ctx.session.user.id },
+      where: { judgeId },
     });
     return { success: true };
   }),
