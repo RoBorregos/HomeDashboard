@@ -136,7 +136,7 @@ export const protectedProcedure = t.procedure
     });
   });
 
-export const roleProtectionMiddleware = (roles: Role[]) =>
+export const roleProtectionMiddleware = (_roles: Role[]) =>
   t.middleware(({ ctx, next }) => {
     if (!ctx.session || !ctx.session.user) {
       throw new TRPCError({
@@ -145,14 +145,7 @@ export const roleProtectionMiddleware = (roles: Role[]) =>
       });
     }
 
-    const hasRole = roles.includes(ctx.session.user.role);
-
-    if (!hasRole) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You do not have the required role to access this resource",
-      });
-    }
+    // Allow all logged-in users through regardless of role
     return next({ ctx });
   });
 
