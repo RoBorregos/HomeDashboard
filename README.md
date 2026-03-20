@@ -1,15 +1,20 @@
-# Candidates Dashboard
+# Home Dashboard
 
 ## Description
 
-This is a web page for competitors, visitors and judges to be used during the Candidates anual competition we host. Features include:
+This is an internal web platform developed for the Roborregos team to support their participation in RoboCup@Home 2026. It is designed to streamline competition management, scoring, and inspection processes in a centralized and efficient way.
 
-- Informational landing page.
-- Live scoreboard and Twitch stream.
-- Informational dashboard for teams.
-- Documantation upload forms.
-- Match points registration for judges.
-- Admin management.
+Features include:
+
+- Internal dashboard for real-time score tracking.
+
+- Inspection management and status monitoring.
+
+- Live results visualization for ongoing tasks and runs.
+
+- Tools for registering and updating scores.
+
+- Administrative controls for managing competition data.
 
 ## Development team
 
@@ -24,6 +29,7 @@ This is a web page for competitors, visitors and judges to be used during the Ca
 | Oscar Arreola |  | [@Oscar-gg](https://github.com/Oscar-gg) | Programmer |
 | Alejandra Coeto | [alecoetos@gmail.com](mailto:alecoetos@gmail.com) | [@Ale-Coeto](https://github.com/Ale-Coeto) | Programmer |
 | Efrain Vazquez | [efrain.vh.21.12@gmail.com](mailto:efrain.vh.21.12@gmail.com) | [@EfraH2O](https://github.com/EfrainH2O) | Programmer
+| Camila Tite | [angetite5@gmail.com](mailto:angetite5@gmail.com) | [@CamilaTite26](https://github.com/CamilaTite26) | Programmer
 
 ## License
 
