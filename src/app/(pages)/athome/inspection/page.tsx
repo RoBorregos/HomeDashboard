@@ -2,10 +2,10 @@
 
 import Header from "rbrgs/app/_components/header";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Checkbox } from "rbrgs/app/_components/shadcn/ui/checkbox";
 import { Button } from "~/app/_components/shadcn/ui/button";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { api } from "~/trpc/react";
 import { ALL_INSPECTION_KEYS, INSPECTION_SECTIONS } from "rbrgs/lib/athome-tasks";
 
@@ -13,18 +13,7 @@ export default function InspectionPage() {
   const router = useRouter();
   const session = useSession();
 
-  const { data: myInspection } = api.athome.inspectionGetMine.useQuery(undefined, {
-    enabled: !!session.data?.user,
-  });
-
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
-  const [initialized, setInitialized] = useState(false);
-
-  useEffect(() => {
-    if (initialized || !myInspection) return;
-    setChecklist(myInspection.checklist as Record<string, boolean>);
-    setInitialized(true);
-  }, [myInspection, initialized]);
 
   const toggleItem = (key: string) => {
     setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -33,11 +22,25 @@ export default function InspectionPage() {
   const allPassed = ALL_INSPECTION_KEYS.every((k) => !!checklist[k]);
 
   const saveMutation = api.athome.inspectionSave.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Record this save in the current browser session
+      const current = JSON.parse(sessionStorage.getItem("athome_session_scores") ?? "[]") as string[];
+      current.push(data.id);
+      sessionStorage.setItem("athome_session_scores", JSON.stringify(current));
+
       router.push("/athome");
       router.refresh();
     },
   });
+
+  if (session.status === "unauthenticated") {
+    return (
+      <main className="mt-[4rem] flex min-h-screen flex-col items-center justify-center bg-black text-white gap-4">
+        <p className="text-white/50">Login required for inspection.</p>
+        <Button onClick={() => signIn("google")}>Sign in</Button>
+      </main>
+    );
+  }
 
   return (
     <main className="mt-[4rem] min-h-screen bg-black text-white">

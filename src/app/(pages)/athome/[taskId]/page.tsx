@@ -3,11 +3,11 @@
 import Header from "rbrgs/app/_components/header";
 import { useParams, useRouter } from "next/navigation";
 import { TASK_MAP, computeTotal } from "rbrgs/lib/athome-tasks";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Checkbox } from "rbrgs/app/_components/shadcn/ui/checkbox";
 import { Stepper } from "rbrgs/app/_components/athome/Stepper";
 import { Button } from "~/app/_components/shadcn/ui/button";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { api } from "~/trpc/react";
 
 export default function TaskPage() {
@@ -17,32 +17,32 @@ export default function TaskPage() {
   const taskId = params.taskId as string;
   const task = TASK_MAP.get(taskId);
 
-  const { data: myHistory } = api.athome.scoreGetMine.useQuery(undefined, {
-    enabled: !!session.data?.user,
-  });
-
   const [scoreData, setScoreData] = useState<Record<string, unknown>>({});
-  const [initialized, setInitialized] = useState(false);
-
-  useEffect(() => {
-    if (!task || initialized || !myHistory) return;
-    const latest = myHistory.find((s) => s.taskId === taskId);
-    if (latest) {
-      setScoreData(latest.scoreData as Record<string, unknown>);
-      setInitialized(true);
-    }
-  }, [myHistory, task, taskId, initialized]);
 
   const totalScore = useMemo(() => computeTotal(taskId, scoreData), [taskId, scoreData]);
 
   const saveMutation = api.athome.scoreSave.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Record this save in the current browser session
+      const current = JSON.parse(sessionStorage.getItem("athome_session_scores") ?? "[]") as string[];
+      current.push(data.id);
+      sessionStorage.setItem("athome_session_scores", JSON.stringify(current));
+
       router.push("/athome");
       router.refresh();
     },
   });
 
   if (!task) return <div>Task not found</div>;
+
+  if (session.status === "unauthenticated") {
+    return (
+      <main className="mt-[4rem] flex min-h-screen flex-col items-center justify-center bg-black text-white gap-4">
+        <p className="text-white/50">Login required to score task.</p>
+        <Button onClick={() => signIn("google")}>Sign in</Button>
+      </main>
+    );
+  }
 
   return (
     <main className="mt-[4rem] min-h-screen bg-black text-white">
@@ -51,7 +51,7 @@ export default function TaskPage() {
       </div>
 
       <div className="mx-auto max-w-2xl px-4 pb-20">
-        {/* Score Card - matching dashboard style */}
+        {/* Score Card */}
         <div className="mb-8 rounded-xl border border-gray-700 bg-gray-900/50 p-6 text-center">
           <p className="text-sm text-gray-400 uppercase tracking-widest">Running Score</p>
           <h2 className="text-6xl font-bold mt-2">{totalScore}</h2>
