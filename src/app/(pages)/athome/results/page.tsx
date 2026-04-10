@@ -1,280 +1,83 @@
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 import Header from "rbrgs/app/_components/header";
-import { Button } from "~/app/_components/shadcn/ui/button";
-import { ConfirmDialog } from "rbrgs/app/_components/athome/ConfirmDialog";
 import { api } from "~/trpc/react";
-import { useScoringSession } from "rbrgs/lib/scoring-session-context";
-import { TASKS, TASK_MAP, ALL_INSPECTION_KEYS } from "rbrgs/lib/athome-tasks";
+import { TASKS } from "rbrgs/lib/athome-tasks";
 
 export default function ResultsPage() {
   const session = useSession();
-  const router = useRouter();
-  const { activeSessionId, activeSessionLabel, setActiveSession, clearActiveSession } =
-    useScoringSession();
-  const [showNewRun, setShowNewRun] = useState(false);
-  const [newLabel, setNewLabel] = useState("");
 
-  const { data: sessionScores } = api.athome.scoreGetBySession.useQuery(
-    { sessionId: activeSessionId! },
-    { enabled: !!activeSessionId },
-  );
-
-  const { data: sessionInspection } = api.athome.inspectionGetBySession.useQuery(
-    { sessionId: activeSessionId! },
-    { enabled: !!activeSessionId },
-  );
-
-  const finishMutation = api.athome.finishSession.useMutation();
-  const createMutation = api.athome.createSession.useMutation({
-    onSuccess(data) {
-      setActiveSession({ id: data.id, label: data.label });
-      toast("New session started!");
-      setShowNewRun(false);
-      router.push("/athome");
-    },
+  const { data: myHistory, isLoading } = api.athome.getMyHistory.useQuery(undefined, {
+    enabled: session.status === "authenticated",
   });
 
-  // Auth guard
+  const { data: bestScores } = api.athome.scoreGetBestPerTask.useQuery();
+
   if (session.status === "unauthenticated") {
     return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-400">Sign in to view results.</p>
-        <Button onClick={() => signIn("google")} className="bg-roboblue">
-          Sign in with Google
-        </Button>
+      <main className="mt-[4rem] min-h-screen bg-black text-white flex items-center justify-center p-4">
+        <div className="text-center">
+           <Header title="Results" subtitle="Login Required" />
+           <p className="text-white/50 mt-4">Please log in to see your results.</p>
+        </div>
       </main>
     );
   }
 
-  if (!activeSessionId) {
-    return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-400">No active session.</p>
-        <Button onClick={() => router.push("/athome")} variant="outline" className="border-gray-600 text-white">
-          Go to Dashboard
-        </Button>
-      </main>
-    );
-  }
-
-  const scoreMap = new Map(
-    (sessionScores ?? []).map((s) => [s.taskId, s]),
-  );
-
-  const checklist = (sessionInspection?.checklist ?? {}) as Record<string, boolean>;
-  const checkedCount = ALL_INSPECTION_KEYS.filter((k) => checklist[k]).length;
-  const inspectionPassed = sessionInspection?.passed ?? false;
-
-  let grandTotal = 0;
-  let maxTotal = 0;
-  for (const task of TASKS) {
-    const saved = scoreMap.get(task.id);
-    if (saved) grandTotal += saved.totalScore;
-    maxTotal += task.maxScore;
-  }
-
-  const handleNewRun = () => {
-    // Finish current session, then create a new one
-    finishMutation.mutate(
-      { sessionId: activeSessionId },
-      {
-        onSuccess() {
-          createMutation.mutate({ label: newLabel || undefined });
-        },
-      },
-    );
-  };
+  const latestPerTask = new Map<string, typeof myHistory[number]>();
+  myHistory?.forEach(s => {
+    if (!latestPerTask.has(s.taskId)) latestPerTask.set(s.taskId, s);
+  });
 
   return (
     <main className="mt-[4rem] min-h-screen bg-black text-white">
-      <div className="md:pb-20">
-        <Header
-          title="Results"
-          subtitle={`Session: ${activeSessionLabel ?? "Untitled"}`}
-        />
+      <div className="md:pb-12">
+        <Header title="My Results" subtitle="Personal Scoring Summary" />
       </div>
 
-      <div className="mx-auto max-w-3xl px-4 pb-12">
-        {/* Inspection */}
-        <div className="mb-6 rounded-xl border border-gray-700 bg-gray-900/50 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-white">Robot Inspection</h3>
-              <p className="text-sm text-gray-400">
-                {checkedCount}/{ALL_INSPECTION_KEYS.length} items checked
-              </p>
-            </div>
-            <span
-              className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                inspectionPassed
-                  ? "bg-emerald-400/20 text-emerald-400"
-                  : "bg-yellow-400/20 text-yellow-400"
-              }`}
-            >
-              {inspectionPassed ? "PASS" : "NOT READY"}
-            </span>
-          </div>
-        </div>
+      <div className="mx-auto max-w-4xl px-4 pb-20">
+        <div className="grid gap-4">
+          {TASKS.map((task) => {
+            const myBest = latestPerTask.get(task.id);
+            const globalBest = bestScores?.[task.id];
 
-        {/* Summary Table */}
-        <div className="rounded-xl border border-gray-700 bg-gray-900/50 overflow-hidden mb-8">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-700 bg-gray-800/50">
-                <th className="text-left p-3 text-gray-400">Task</th>
-                <th className="text-right p-3 text-gray-400">My Score</th>
-                <th className="text-right p-3 text-gray-400">Max</th>
-                <th className="text-right p-3 text-gray-400">%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {TASKS.map((task) => {
-                const saved = scoreMap.get(task.id);
-                const score = saved?.totalScore ?? 0;
-                const pct = task.maxScore > 0 ? Math.round((score / task.maxScore) * 100) : 0;
-                return (
-                  <tr key={task.id} className="border-b border-gray-700/50">
-                    <td className="p-3 text-white">{task.name}</td>
-                    <td
-                      className={`p-3 text-right font-mono ${
-                        score > 0
-                          ? "text-emerald-400"
-                          : score < 0
-                            ? "text-red-400"
-                            : "text-gray-500"
-                      }`}
-                    >
-                      {saved ? score : "—"}
-                    </td>
-                    <td className="p-3 text-right text-gray-400 font-mono">
-                      {task.maxScore}
-                    </td>
-                    <td className="p-3 text-right text-gray-400 font-mono">
-                      {saved ? `${pct}%` : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-              {/* Total row */}
-              <tr className="bg-gray-800/50 font-bold">
-                <td className="p-3 text-white">Total</td>
-                <td
-                  className={`p-3 text-right font-mono ${
-                    grandTotal >= 0 ? "text-emerald-400" : "text-red-400"
-                  }`}
-                >
-                  {grandTotal}
-                </td>
-                <td className="p-3 text-right text-gray-400 font-mono">
-                  {maxTotal}
-                </td>
-                <td className="p-3 text-right text-gray-400 font-mono">
-                  {maxTotal > 0 ? `${Math.round((grandTotal / maxTotal) * 100)}%` : "—"}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Per-task breakdown of non-zero items */}
-        {TASKS.map((task) => {
-          const saved = scoreMap.get(task.id);
-          if (!saved) return null;
-          const data = saved.scoreData as Record<string, unknown>;
-          const taskDef = TASK_MAP.get(task.id);
-          if (!taskDef) return null;
-
-          const nonZeroItems: { label: string; value: number }[] = [];
-          for (const section of taskDef.sections) {
-            for (const item of section.items) {
-              if (task.id === "finals" && item.key.startsWith("custom_")) {
-                const pts = data[`${item.key}_points`];
-                const name = data[`${item.key}_name`];
-                if (typeof pts === "number" && pts !== 0) {
-                  nonZeroItems.push({
-                    label: (name as string) || item.label,
-                    value: pts,
-                  });
-                }
-                continue;
-              }
-              const val = data[item.key];
-              if (item.type === "checkbox" && val === true) {
-                nonZeroItems.push({ label: item.label, value: item.points });
-              } else if (
-                item.type === "stepper" &&
-                typeof val === "number" &&
-                val > 0
-              ) {
-                nonZeroItems.push({
-                  label: `${item.label} (×${val})`,
-                  value: val * item.points,
-                });
-              }
-            }
-          }
-
-          if (nonZeroItems.length === 0) return null;
-
-          return (
-            <div key={task.id} className="mb-6">
-              <h3 className="text-sm font-bold text-roboblue mb-2">
-                {task.name} — {saved.totalScore} pts
-              </h3>
-              <div className="space-y-1">
-                {nonZeroItems.map((ni, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between text-xs rounded px-2 py-1 bg-gray-900/50"
-                  >
-                    <span className="text-gray-300">{ni.label}</span>
-                    <span
-                      className={`font-mono ${
-                        ni.value >= 0 ? "text-emerald-400" : "text-red-400"
-                      }`}
-                    >
-                      {ni.value >= 0 ? "+" : ""}
-                      {ni.value}
-                    </span>
+            return (
+              <div
+                key={task.id}
+                className="group overflow-hidden rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
+              >
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{task.name}</h3>
+                    <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">
+                      Max Score: {task.maxScore} pts
+                    </p>
                   </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
 
-        {/* Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-          <Button
-            variant="destructive"
-            onClick={() => setShowNewRun(true)}
-          >
-            Start New Run
-          </Button>
-          <Button
-            variant="outline"
-            className="border-gray-600 text-white bg-gray-800 hover:bg-gray-700"
-            onClick={() => router.push("/athome")}
-          >
-            Back to Dashboard
-          </Button>
+                  <div className="flex items-center gap-8">
+                    <div className="text-center">
+                      <p className="text-[10px] text-white/40 font-bold uppercase tracking-tighter mb-1">Your Best</p>
+                      <p className="text-3xl font-bold text-white">{myBest?.totalScore ?? '—'}</p>
+                    </div>
+                    <div className="h-8 w-px bg-white/10"></div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-white/40 font-bold uppercase tracking-tighter mb-1">Global Record</p>
+                      <p className="text-3xl font-bold text-white/60">{globalBest ?? '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {myBest && (
+                   <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+                      <p className="text-[10px] text-white/20 uppercase font-mono">Last updated: {new Date(myBest.savedAt).toLocaleString()}</p>
+                   </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
-
-      <ConfirmDialog
-        open={showNewRun}
-        onOpenChange={setShowNewRun}
-        title="Start New Run?"
-        description="This will finish the current session and create a new one. Your existing scores will be preserved in the session history."
-        confirmLabel="Start New Session"
-        destructive
-        onConfirm={handleNewRun}
-      />
     </main>
   );
 }

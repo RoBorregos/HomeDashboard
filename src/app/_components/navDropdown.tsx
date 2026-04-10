@@ -38,11 +38,6 @@ export default function NavDropdown({ session }: { session: Session | null }) {
             </Link>
           </SheetClose>
           <SheetClose asChild>
-            <Link href="/athome/sessions" className="w-full text-lg">
-              Sessions
-            </Link>
-          </SheetClose>
-          <SheetClose asChild>
             <Link href="/athome/admin" className="w-full text-lg">
               Overview
             </Link>

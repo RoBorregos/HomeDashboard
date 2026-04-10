@@ -1,162 +1,82 @@
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
-import { toast } from "sonner";
 import Header from "rbrgs/app/_components/header";
-import { Button } from "~/app/_components/shadcn/ui/button";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Checkbox } from "rbrgs/app/_components/shadcn/ui/checkbox";
+import { Button } from "~/app/_components/shadcn/ui/button";
+import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
-import { useScoringSession } from "rbrgs/lib/scoring-session-context";
-import { INSPECTION_SECTIONS, ALL_INSPECTION_KEYS } from "rbrgs/lib/athome-tasks";
+import { ALL_INSPECTION_KEYS, INSPECTION_SECTIONS } from "rbrgs/lib/athome-tasks";
 
 export default function InspectionPage() {
-  const session = useSession();
   const router = useRouter();
-  const { activeSessionId } = useScoringSession();
+  const session = useSession();
 
-  const { data: existing, isLoading } = api.athome.inspectionGetBySession.useQuery(
-    { sessionId: activeSessionId! },
-    { enabled: !!activeSessionId },
-  );
+  const { data: myInspection } = api.athome.inspectionGetMine.useQuery(undefined, {
+    enabled: !!session.data?.user,
+  });
 
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [initialized, setInitialized] = useState(false);
 
-  // Pre-fill from DB
   useEffect(() => {
-    if (existing && !initialized) {
-      const saved = (existing.checklist ?? {}) as Record<string, boolean>;
-      setChecklist(saved);
-      setInitialized(true);
-    } else if (!existing && !isLoading && !initialized) {
-      // Initialize all keys to false
-      const init: Record<string, boolean> = {};
-      for (const k of ALL_INSPECTION_KEYS) init[k] = false;
-      setChecklist(init);
-      setInitialized(true);
-    }
-  }, [existing, isLoading, initialized]);
-
-  const checkedCount = useMemo(
-    () => ALL_INSPECTION_KEYS.filter((k) => checklist[k]).length,
-    [checklist],
-  );
-
-  const passed = checkedCount === ALL_INSPECTION_KEYS.length;
-
-  const saveMutation = api.athome.inspectionSave.useMutation({
-    onSuccess() {
-      toast("Inspection saved!");
-      router.push("/athome");
-    },
-    onError(err) {
-      toast("Error saving inspection");
-      console.error(err);
-    },
-  });
+    if (initialized || !myInspection) return;
+    setChecklist(myInspection.checklist as Record<string, boolean>);
+    setInitialized(true);
+  }, [myInspection, initialized]);
 
   const toggleItem = (key: string) => {
     setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Auth guard
-  if (session.status === "unauthenticated") {
-    return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-400">Sign in to manage inspections.</p>
-        <Button onClick={() => signIn("google")} className="bg-roboblue">
-          Sign in with Google
-        </Button>
-      </main>
-    );
-  }
+  const allPassed = ALL_INSPECTION_KEYS.every((k) => !!checklist[k]);
 
-  if (!activeSessionId) {
-    return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-400">No active session.</p>
-        <Button onClick={() => router.push("/athome")} variant="outline" className="border-gray-600 text-white">
-          Go to Dashboard
-        </Button>
-      </main>
-    );
-  }
+  const saveMutation = api.athome.inspectionSave.useMutation({
+    onSuccess: () => {
+      router.push("/athome");
+      router.refresh();
+    },
+  });
 
   return (
     <main className="mt-[4rem] min-h-screen bg-black text-white">
       <div className="md:pb-20">
-        <Header title="Robot Inspection" subtitle="RoboCup@Home 2026" />
+        <Header title="Inspection" subtitle="Security & Robot Requirements" />
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 pb-12">
-        {/* Counter */}
-        <div className="mb-6 text-center">
-          <span className="text-3xl font-bold">
-            {checkedCount}/{ALL_INSPECTION_KEYS.length}
-          </span>
-          <span className="ml-2 text-gray-400">checked</span>
-        </div>
-
-        {/* Sections */}
+      <div className="mx-auto max-w-2xl px-4 pb-20">
         {INSPECTION_SECTIONS.map((section) => (
           <div key={section.title} className="mb-8">
-            <h2 className="mb-3 text-lg font-bold text-roboblue border-b border-gray-700 pb-2">
-              {section.title}
-            </h2>
+            <h2 className="mb-4 text-xl font-bold text-white">{section.title}</h2>
             <div className="space-y-2">
               {section.items.map((item) => (
-                <label
-                  key={item.key}
-                  className="flex items-start gap-3 rounded-lg border border-gray-700 bg-gray-900/50 p-3 cursor-pointer hover:border-gray-500 transition-colors"
+                <div 
+                  key={item.key} 
+                  className="flex items-center justify-between rounded-xl border border-gray-700 bg-gray-900/50 p-4"
                 >
-                  <Checkbox
-                    checked={!!checklist[item.key]}
-                    onCheckedChange={() => toggleItem(item.key)}
-                    className="mt-0.5"
-                  />
-                  <span className="text-sm text-gray-200 leading-tight">
-                    {item.label}
-                  </span>
-                </label>
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id={item.key}
+                      checked={!!checklist[item.key]}
+                      onCheckedChange={() => toggleItem(item.key)}
+                    />
+                    <label htmlFor={item.key} className="text-sm cursor-pointer">{item.label}</label>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         ))}
 
-        {/* Bottom */}
-        <div className="flex flex-col items-center gap-4 mt-8">
-          <span
-            className={`rounded-full px-6 py-2 text-lg font-bold ${
-              passed
-                ? "bg-emerald-400/20 text-emerald-400"
-                : "bg-yellow-400/20 text-yellow-400"
-            }`}
-          >
-            {passed ? "✓ PASS" : "NOT READY"}
-          </span>
-
-          <Button
-            onClick={() =>
-              saveMutation.mutate({
-                sessionId: activeSessionId,
-                checklist,
-                passed,
-              })
-            }
+        <div className="mt-12 flex justify-center gap-4">
+          <Button 
+            onClick={() => saveMutation.mutate({ checklist, passed: allPassed })}
             disabled={saveMutation.isPending}
-            className="w-full max-w-xs"
+            className="w-full max-w-xs bg-white text-black hover:bg-gray-200 font-bold py-6 rounded-xl"
           >
-            {saveMutation.isPending ? "Saving..." : "Save Inspection"}
+            {saveMutation.isPending ? "Saving..." : "Done"}
           </Button>
-
-          <button
-            onClick={() => router.push("/athome")}
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            ← Back to Dashboard
-          </button>
         </div>
       </div>
     </main>

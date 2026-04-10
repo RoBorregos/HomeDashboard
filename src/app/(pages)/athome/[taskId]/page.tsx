@@ -1,285 +1,103 @@
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
-import { useRouter, useParams } from "next/navigation";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { toast } from "sonner";
 import Header from "rbrgs/app/_components/header";
-import { Button } from "~/app/_components/shadcn/ui/button";
+import { useParams, useRouter } from "next/navigation";
+import { TASK_MAP, computeTotal } from "rbrgs/lib/athome-tasks";
+import { useState, useMemo, useEffect } from "react";
 import { Checkbox } from "rbrgs/app/_components/shadcn/ui/checkbox";
 import { Stepper } from "rbrgs/app/_components/athome/Stepper";
+import { Button } from "~/app/_components/shadcn/ui/button";
+import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
-import { useScoringSession } from "rbrgs/lib/scoring-session-context";
-import { TASK_MAP, computeTotal } from "rbrgs/lib/athome-tasks";
 
-export default function TaskScorePage() {
-  const session = useSession();
-  const router = useRouter();
+export default function TaskPage() {
   const params = useParams();
+  const router = useRouter();
+  const session = useSession();
   const taskId = params.taskId as string;
-  const { activeSessionId } = useScoringSession();
-
   const task = TASK_MAP.get(taskId);
 
-  const { data: sessionScores, isLoading } = api.athome.scoreGetBySession.useQuery(
-    { sessionId: activeSessionId! },
-    { enabled: !!activeSessionId },
-  );
+  const { data: myHistory } = api.athome.scoreGetMine.useQuery(undefined, {
+    enabled: !!session.data?.user,
+  });
 
   const [scoreData, setScoreData] = useState<Record<string, unknown>>({});
   const [initialized, setInitialized] = useState(false);
 
-  // Custom task state for finals
-  const [customTasks, setCustomTasks] = useState<
-    { name: string; points: number }[]
-  >([
-    { name: "", points: 0 },
-    { name: "", points: 0 },
-    { name: "", points: 0 },
-  ]);
-
-  // Pre-fill from DB
   useEffect(() => {
-    if (!task || initialized) return;
-    const existing = sessionScores?.find((s) => s.taskId === taskId);
-    if (existing) {
-      const data = existing.scoreData as Record<string, unknown>;
-      setScoreData(data);
-      // Restore custom tasks for finals
-      if (taskId === "finals") {
-        setCustomTasks([
-          {
-            name: (data.custom_1_name as string) ?? "",
-            points: (data.custom_1_points as number) ?? 0,
-          },
-          {
-            name: (data.custom_2_name as string) ?? "",
-            points: (data.custom_2_points as number) ?? 0,
-          },
-          {
-            name: (data.custom_3_name as string) ?? "",
-            points: (data.custom_3_points as number) ?? 0,
-          },
-        ]);
-      }
-      setInitialized(true);
-    } else if (!isLoading) {
+    if (!task || initialized || !myHistory) return;
+    const latest = myHistory.find((s) => s.taskId === taskId);
+    if (latest) {
+      setScoreData(latest.scoreData as Record<string, unknown>);
       setInitialized(true);
     }
-  }, [sessionScores, isLoading, task, taskId, initialized]);
+  }, [myHistory, task, taskId, initialized]);
 
-  const updateField = useCallback((key: string, value: unknown) => {
-    setScoreData((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
-  // Build full scoreData including custom tasks
-  const fullScoreData = useMemo(() => {
-    if (taskId !== "finals") return scoreData;
-    const data = { ...scoreData };
-    customTasks.forEach((ct, i) => {
-      const key = `custom_${i + 1}`;
-      data[`${key}_name`] = ct.name;
-      data[`${key}_points`] = ct.points;
-    });
-    return data;
-  }, [scoreData, customTasks, taskId]);
-
-  const total = useMemo(
-    () => computeTotal(taskId, fullScoreData),
-    [taskId, fullScoreData],
-  );
+  const totalScore = useMemo(() => computeTotal(taskId, scoreData), [taskId, scoreData]);
 
   const saveMutation = api.athome.scoreSave.useMutation({
-    onSuccess() {
-      toast("Score saved!");
+    onSuccess: () => {
       router.push("/athome");
-    },
-    onError(err) {
-      toast("Error saving score");
-      console.error(err);
+      router.refresh();
     },
   });
 
-  // Auth guard
-  if (session.status === "unauthenticated") {
-    return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-400">Sign in to score tasks.</p>
-        <Button onClick={() => signIn("google")} className="bg-roboblue">
-          Sign in with Google
-        </Button>
-      </main>
-    );
-  }
-
-  if (!activeSessionId) {
-    return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-400">No active session. Go back to create or select one.</p>
-        <Button onClick={() => router.push("/athome")} variant="outline" className="border-gray-600 text-white">
-          Go to Dashboard
-        </Button>
-      </main>
-    );
-  }
-
-  if (!task) {
-    return (
-      <main className="mt-[4rem] min-h-screen bg-black text-white">
-        <Header title="Unknown Task" subtitle="" />
-        <p className="text-center text-xl mt-8">Task &quot;{taskId}&quot; not found.</p>
-      </main>
-    );
-  }
-
-  const handleSave = () => {
-    saveMutation.mutate({
-      sessionId: activeSessionId,
-      taskId,
-      scoreData: fullScoreData,
-      totalScore: total,
-    });
-  };
+  if (!task) return <div>Task not found</div>;
 
   return (
     <main className="mt-[4rem] min-h-screen bg-black text-white">
       <div className="md:pb-20">
-        <Header title={task.name} subtitle={`⏱ ${task.timeLimit} · Max ${task.maxScore} pts`} />
+        <Header title={task.name} subtitle={`Max Score: ${task.maxScore} pts`} />
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 pb-12">
-        {/* Live total */}
-        <div className="mb-6 text-center sticky top-[4rem] z-10 bg-black/90 backdrop-blur py-3 rounded-b-xl border-b border-gray-700">
-          <span className="text-sm text-gray-400">Running Total</span>
-          <p
-            className={`text-4xl font-bold ${
-              total < 0 ? "text-red-400" : "text-emerald-400"
-            }`}
-          >
-            {total}
-          </p>
+      <div className="mx-auto max-w-2xl px-4 pb-20">
+        {/* Score Card - matching dashboard style */}
+        <div className="mb-8 rounded-xl border border-gray-700 bg-gray-900/50 p-6 text-center">
+          <p className="text-sm text-gray-400 uppercase tracking-widest">Running Score</p>
+          <h2 className="text-6xl font-bold mt-2">{totalScore}</h2>
         </div>
 
-        {/* Sections */}
-        {task.sections.map((section) => {
-          // Skip custom tasks section — handled separately
-          if (taskId === "finals" && section.title === "Custom Tasks") return null;
-
-          return (
-            <div key={section.title} className="mb-8">
-              <h2 className="mb-3 text-lg font-bold text-roboblue border-b border-gray-700 pb-2">
-                {section.title}
-              </h2>
-              <div className="space-y-2">
-                {section.items.map((item) => {
-                  if (item.type === "checkbox") {
-                    const checked = !!scoreData[item.key];
-                    return (
-                      <label
-                        key={item.key}
-                        className="flex items-start gap-3 rounded-lg border border-gray-700 bg-gray-900/50 p-3 cursor-pointer hover:border-gray-500 transition-colors"
-                      >
+        {task.sections.map((section) => (
+          <div key={section.title} className="mb-8">
+            <h2 className="mb-4 text-xl font-bold text-white">{section.title}</h2>
+            <div className="space-y-2">
+              {section.items.map((item) => (
+                <div key={item.key} className="rounded-xl border border-gray-700 bg-gray-900/50 p-4 transition-all">
+                  {item.type === "checkbox" ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
                         <Checkbox
-                          checked={checked}
-                          onCheckedChange={() =>
-                            updateField(item.key, !checked)
-                          }
-                          className="mt-0.5"
+                          id={item.key}
+                          checked={!!scoreData[item.key]}
+                          onCheckedChange={(val) => setScoreData(prev => ({ ...prev, [item.key]: !!val }))}
                         />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm text-gray-200 leading-tight">
-                            {item.label}
-                          </span>
-                          <p
-                            className={`text-xs font-mono mt-0.5 ${
-                              item.points >= 0
-                                ? "text-emerald-400"
-                                : "text-red-400"
-                            }`}
-                          >
-                            {item.points >= 0 ? "+" : ""}
-                            {item.points} pts
-                          </p>
-                        </div>
-                      </label>
-                    );
-                  }
-
-                  // Stepper
-                  return (
+                        <label htmlFor={item.key} className="text-sm cursor-pointer">{item.label}</label>
+                      </div>
+                      <span className="text-xs font-mono text-gray-500">{item.points} pts</span>
+                    </div>
+                  ) : (
                     <Stepper
-                      key={item.key}
                       value={(scoreData[item.key] as number) ?? 0}
-                      onChange={(v) => updateField(item.key, v)}
+                      onChange={(v) => setScoreData(prev => ({ ...prev, [item.key]: v }))}
                       max={item.max ?? 1}
                       label={item.label}
                       points={item.points}
                     />
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Custom Tasks (Finals only) */}
-        {taskId === "finals" && (
-          <div className="mb-8">
-            <h2 className="mb-3 text-lg font-bold text-roboblue border-b border-gray-700 pb-2">
-              Custom Tasks
-            </h2>
-            <div className="space-y-3">
-              {customTasks.map((ct, i) => (
-                <div
-                  key={i}
-                  className="flex flex-col sm:flex-row gap-2 rounded-lg border border-gray-700 bg-gray-900/50 p-3"
-                >
-                  <input
-                    type="text"
-                    placeholder={`Custom task ${i + 1} name`}
-                    value={ct.name}
-                    onChange={(e) => {
-                      const newTasks = [...customTasks];
-                      newTasks[i] = { ...newTasks[i]!, name: e.target.value };
-                      setCustomTasks(newTasks);
-                    }}
-                    className="flex-1 rounded border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-roboblue"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Points"
-                    value={ct.points || ""}
-                    onChange={(e) => {
-                      const newTasks = [...customTasks];
-                      newTasks[i] = {
-                        ...newTasks[i]!,
-                        points: parseInt(e.target.value) || 0,
-                      };
-                      setCustomTasks(newTasks);
-                    }}
-                    className="w-24 rounded border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-roboblue"
-                  />
+                  )}
                 </div>
               ))}
             </div>
           </div>
-        )}
+        ))}
 
-        {/* Save */}
-        <div className="flex flex-col items-center gap-4 mt-8">
-          <Button
-            onClick={handleSave}
+        <div className="mt-12 flex justify-center gap-4">
+          <Button 
+            onClick={() => saveMutation.mutate({ taskId, scoreData, totalScore })}
             disabled={saveMutation.isPending}
-            className="w-full max-w-xs"
+            className="w-full max-w-xs bg-white text-black hover:bg-gray-200 font-bold py-6 rounded-xl"
           >
-            {saveMutation.isPending ? "Saving..." : "Save & Finish"}
+            {saveMutation.isPending ? "Saving..." : "Done"}
           </Button>
-          <button
-            onClick={() => router.push("/athome")}
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            ← Back to Dashboard
-          </button>
         </div>
       </div>
     </main>

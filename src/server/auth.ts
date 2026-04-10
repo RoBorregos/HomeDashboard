@@ -9,6 +9,7 @@ import Google from "next-auth/providers/google";
 
 import { env } from "rbrgs/env";
 import { db } from "rbrgs/server/db";
+import { Role } from "@prisma/client";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -20,7 +21,14 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      role: Role;
+      teamId: string | null;
     } & DefaultSession["user"];
+  }
+
+  interface User {
+    role: Role;
+    teamId: string | null;
   }
 }
 
@@ -36,7 +44,9 @@ export const authOptions: NextAuthOptions = {
       ...session,
       user: {
         ...session.user,
+        role: user.role,
         id: user.id,
+        teamId: user.teamId,
       },
     }),
   },
@@ -45,23 +55,10 @@ export const authOptions: NextAuthOptions = {
     strategy: "database",
   },
   providers: [
-    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
-      ? [
-          Google({
-            clientId: env.GOOGLE_CLIENT_ID,
-            clientSecret: env.GOOGLE_CLIENT_SECRET,
-          }),
-        ]
-      : []),
-    /**
-     * ...add more providers here.
-     *
-     * Most other providers require a bit more work than the Discord provider. For example, the
-     * GitHub provider requires you to add the `refresh_token_expires_in` field to the Account
-     * model. Refer to the NextAuth.js docs for the provider you want to use. Example:
-     *
-     * @see https://next-auth.js.org/providers/github
-     */
+    Google({
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    }),
   ],
 };
 

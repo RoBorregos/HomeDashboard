@@ -137,13 +137,12 @@ export default function AtHomeAdminPage() {
                       return (
                         <td
                           key={t.id}
-                          className={`p-3 text-right font-mono ${
-                            isBest
+                          className={`p-3 text-right font-mono ${isBest
                               ? "text-emerald-400 font-bold"
                               : score !== undefined
                                 ? "text-white"
                                 : "text-gray-600"
-                          }`}
+                            }`}
                         >
                           {score ?? "—"}
                         </td>
@@ -155,11 +154,10 @@ export default function AtHomeAdminPage() {
                     <td className="p-3 text-right">
                       {insp ? (
                         <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                            insp.passed
+                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${insp.passed
                               ? "bg-emerald-400/20 text-emerald-400"
                               : "bg-yellow-400/20 text-yellow-400"
-                          }`}
+                            }`}
                         >
                           {insp.passed ? "PASS" : "FAIL"}
                         </span>
@@ -169,11 +167,10 @@ export default function AtHomeAdminPage() {
                     </td>
                     <td className="p-3 text-center">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          s.finishedAt
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${s.finishedAt
                             ? "bg-gray-700 text-gray-400"
                             : "bg-roboblue/20 text-roboblue"
-                        }`}
+                          }`}
                       >
                         {s.finishedAt ? "Finished" : "Active"}
                       </span>

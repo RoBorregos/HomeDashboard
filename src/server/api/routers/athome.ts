@@ -2,130 +2,44 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import {
   createTRPCRouter,
-  protectedProcedure,
+  judgeProcedure,
   publicProcedure,
+  protectedProcedure,
 } from "rbrgs/server/api/trpc";
 
 export const athomeRouter = createTRPCRouter({
-  // ── Sessions ────────────────────────────────────────────────────
-
-  /** Create a new scoring session for the current user */
-  createSession: protectedProcedure
+  /** Save or update a task score */
+  scoreSave: judgeProcedure
     .input(
       z.object({
-        label: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      return ctx.db.scoringSession.create({
-        data: {
-          userId: ctx.session.user.id,
-          label: input.label ?? null,
-        },
-      });
-    }),
-
-  /** Finish (close) a scoring session */
-  finishSession: protectedProcedure
-    .input(z.object({ sessionId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      return ctx.db.scoringSession.update({
-        where: { id: input.sessionId, userId: ctx.session.user.id },
-        data: { finishedAt: new Date() },
-      });
-    }),
-
-  /** Get all sessions for the current user */
-  getMySessions: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.scoringSession.findMany({
-      where: { userId: ctx.session.user.id },
-      orderBy: { startedAt: "desc" },
-      include: {
-        scores: {
-          select: { taskId: true, totalScore: true },
-        },
-        inspections: {
-          select: { passed: true },
-        },
-      },
-    });
-  }),
-
-  /** Get details for a specific session */
-  getSessionDetail: protectedProcedure
-    .input(z.object({ sessionId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.scoringSession.findUnique({
-        where: { id: input.sessionId },
-        include: {
-          user: { select: { name: true, email: true, image: true } },
-          scores: true,
-          inspections: true,
-        },
-      });
-    }),
-
-  /** Get all sessions across all users (for the overview/admin page) */
-  getAllSessions: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.scoringSession.findMany({
-      orderBy: { startedAt: "desc" },
-      include: {
-        user: { select: { id: true, name: true, email: true, image: true } },
-        scores: {
-          select: { taskId: true, totalScore: true },
-        },
-        inspections: {
-          select: { passed: true },
-        },
-      },
-    });
-  }),
-
-  // ── Scores ──────────────────────────────────────────────────────
-
-  /** Save or update a task score within a session */
-  scoreSave: protectedProcedure
-    .input(
-      z.object({
-        sessionId: z.string(),
         taskId: z.string(),
+        label: z.string().optional(),
         scoreData: z.record(z.unknown()),
         totalScore: z.number(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.taskScore.upsert({
-        where: {
-          taskId_sessionId: {
-            taskId: input.taskId,
-            sessionId: input.sessionId,
-          },
-        },
-        create: {
+      return ctx.db.taskScore.create({
+        data: {
           taskId: input.taskId,
           userId: ctx.session.user.id,
-          sessionId: input.sessionId,
-          scoreData: input.scoreData as Prisma.InputJsonValue,
-          totalScore: input.totalScore,
-        },
-        update: {
+          label: input.label ?? null,
           scoreData: input.scoreData as Prisma.InputJsonValue,
           totalScore: input.totalScore,
         },
       });
     }),
 
-  /** Get all scores for a specific session */
-  scoreGetBySession: protectedProcedure
-    .input(z.object({ sessionId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.taskScore.findMany({
-        where: { sessionId: input.sessionId },
-      });
-    }),
+  /** Get my scores (renamed to match original UI code) */
+  scoreGetMine: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.db.taskScore.findMany({
+      where: { userId: ctx.session.user.id },
+      orderBy: { savedAt: "desc" },
+    });
+  }),
 
-  /** Get best score per task across ALL sessions (all users) */
-  scoreGetBestPerTask: protectedProcedure.query(async ({ ctx }) => {
+  /** Get best per task (all users) */
+  scoreGetBestPerTask: publicProcedure.query(async ({ ctx }) => {
     const all = await ctx.db.taskScore.findMany({
       select: { taskId: true, totalScore: true },
     });
@@ -137,34 +51,31 @@ export const athomeRouter = createTRPCRouter({
     return Object.fromEntries(best);
   }),
 
-  /** Get all scores (admin-like overview) */
-  scoreGetAll: protectedProcedure.query(async ({ ctx }) => {
+  /** Get all scores (summary view) */
+  scoreGetAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.taskScore.findMany({
-      orderBy: { taskId: "asc" },
+      orderBy: { savedAt: "desc" },
       include: {
         user: { select: { name: true, email: true } },
-        session: { select: { label: true, startedAt: true } },
       },
     });
   }),
 
   // ── Inspection ──────────────────────────────────────────────────
 
-  /** Save or update inspection for a session */
-  inspectionSave: protectedProcedure
+  /** Save inspection */
+  inspectionSave: judgeProcedure
     .input(
       z.object({
-        sessionId: z.string(),
         checklist: z.record(z.boolean()),
         passed: z.boolean(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.inspectionResult.upsert({
-        where: { sessionId: input.sessionId },
+        where: { userId: ctx.session.user.id },
         create: {
           userId: ctx.session.user.id,
-          sessionId: input.sessionId,
           checklist: input.checklist as Prisma.InputJsonValue,
           passed: input.passed,
         },
@@ -175,22 +86,41 @@ export const athomeRouter = createTRPCRouter({
       });
     }),
 
-  /** Get inspection for a specific session */
-  inspectionGetBySession: protectedProcedure
-    .input(z.object({ sessionId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.inspectionResult.findUnique({
-        where: { sessionId: input.sessionId },
-      });
-    }),
+  /** Get my inspection (renamed to match original UI code) */
+  inspectionGetMine: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.db.inspectionResult.findUnique({
+      where: { userId: ctx.session.user.id },
+    });
+  }),
 
-  /** Get all inspections (admin-like overview) */
-  inspectionGetAll: protectedProcedure.query(async ({ ctx }) => {
+  /** Get all inspections */
+  inspectionGetAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.inspectionResult.findMany({
       include: {
-        user: { select: { name: true, email: true } },
-        session: { select: { label: true, startedAt: true } },
+        user: { select: { name: true, email: true, image: true } },
       },
     });
   }),
+
+  /** Legacy compat query */
+  getAllSessions: publicProcedure.query(async ({ ctx }) => {
+    // This is a complex query to mock the 'sessions' structure from the old admin view
+    const users = await ctx.db.user.findMany({
+        where: { taskScores: { some: {} } },
+        include: {
+            taskScores: true,
+            inspectionResult: true
+        }
+    });
+
+    return users.map(u => ({
+        id: u.id,
+        user: u,
+        label: "Judge Session",
+        startedAt: u.taskScores[0]?.savedAt ?? new Date(),
+        finishedAt: u.taskScores.length > 0 ? new Date() : null,
+        scores: u.taskScores,
+        inspections: u.inspectionResult
+    }));
+  })
 });

@@ -21,7 +21,6 @@ export default async function Navbar() {
         <Link href="/athome">Dashboard</Link>
         <Link href="/athome/results">Results</Link>
         <Link href="/athome/inspection">Inspection</Link>
-        <Link href="/athome/sessions">Sessions</Link>
         <Link href="/athome/admin">Overview</Link>
         <Link href="https://www.roborregos.com">About us</Link>
       </div>
