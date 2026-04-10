@@ -1,7 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { Role } from "@prisma/client";
+import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,43 +8,67 @@ import Header from "rbrgs/app/_components/header";
 import { Button } from "~/app/_components/shadcn/ui/button";
 import { ConfirmDialog } from "rbrgs/app/_components/athome/ConfirmDialog";
 import { api } from "~/trpc/react";
+import { useScoringSession } from "rbrgs/lib/scoring-session-context";
 import { TASKS, TASK_MAP, ALL_INSPECTION_KEYS } from "rbrgs/lib/athome-tasks";
 
 export default function ResultsPage() {
   const session = useSession();
   const router = useRouter();
-  const utils = api.useUtils();
-  const [showReset, setShowReset] = useState(false);
+  const { activeSessionId, activeSessionLabel, setActiveSession, clearActiveSession } =
+    useScoringSession();
+  const [showNewRun, setShowNewRun] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
 
-  const { data: myScores } = api.athome.scoreGetMine.useQuery(undefined, {
-    enabled: !!session.data?.user,
-  });
-  const { data: myInspection } = api.athome.inspectionGetMine.useQuery(
-    undefined,
-    { enabled: !!session.data?.user },
+  const { data: sessionScores } = api.athome.scoreGetBySession.useQuery(
+    { sessionId: activeSessionId! },
+    { enabled: !!activeSessionId },
   );
 
-  const resetMutation = api.athome.resetAll.useMutation({
-    onSuccess() {
-      toast("All scores and inspection reset!");
-      void utils.athome.invalidate();
+  const { data: sessionInspection } = api.athome.inspectionGetBySession.useQuery(
+    { sessionId: activeSessionId! },
+    { enabled: !!activeSessionId },
+  );
+
+  const finishMutation = api.athome.finishSession.useMutation();
+  const createMutation = api.athome.createSession.useMutation({
+    onSuccess(data) {
+      setActiveSession({ id: data.id, label: data.label });
+      toast("New session started!");
+      setShowNewRun(false);
       router.push("/athome");
     },
-    onError(err) {
-      toast("Error resetting");
-      console.error(err);
-    },
   });
 
-  // No role checks - page is public
+  // Auth guard
+  if (session.status === "unauthenticated") {
+    return (
+      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-400">Sign in to view results.</p>
+        <Button onClick={() => signIn("google")} className="bg-roboblue">
+          Sign in with Google
+        </Button>
+      </main>
+    );
+  }
+
+  if (!activeSessionId) {
+    return (
+      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-400">No active session.</p>
+        <Button onClick={() => router.push("/athome")} variant="outline" className="border-gray-600 text-white">
+          Go to Dashboard
+        </Button>
+      </main>
+    );
+  }
 
   const scoreMap = new Map(
-    (myScores ?? []).map((s) => [s.taskId, s]),
+    (sessionScores ?? []).map((s) => [s.taskId, s]),
   );
 
-  const checklist = (myInspection?.checklist ?? {}) as Record<string, boolean>;
+  const checklist = (sessionInspection?.checklist ?? {}) as Record<string, boolean>;
   const checkedCount = ALL_INSPECTION_KEYS.filter((k) => checklist[k]).length;
-  const inspectionPassed = myInspection?.passed ?? false;
+  const inspectionPassed = sessionInspection?.passed ?? false;
 
   let grandTotal = 0;
   let maxTotal = 0;
@@ -55,10 +78,25 @@ export default function ResultsPage() {
     maxTotal += task.maxScore;
   }
 
+  const handleNewRun = () => {
+    // Finish current session, then create a new one
+    finishMutation.mutate(
+      { sessionId: activeSessionId },
+      {
+        onSuccess() {
+          createMutation.mutate({ label: newLabel || undefined });
+        },
+      },
+    );
+  };
+
   return (
     <main className="mt-[4rem] min-h-screen bg-black text-white">
       <div className="md:pb-20">
-        <Header title="Results" subtitle="RoboCup@Home 2026" />
+        <Header
+          title="Results"
+          subtitle={`Session: ${activeSessionLabel ?? "Untitled"}`}
+        />
       </div>
 
       <div className="mx-auto max-w-3xl px-4 pb-12">
@@ -214,7 +252,7 @@ export default function ResultsPage() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
           <Button
             variant="destructive"
-            onClick={() => setShowReset(true)}
+            onClick={() => setShowNewRun(true)}
           >
             Start New Run
           </Button>
@@ -229,13 +267,13 @@ export default function ResultsPage() {
       </div>
 
       <ConfirmDialog
-        open={showReset}
-        onOpenChange={setShowReset}
+        open={showNewRun}
+        onOpenChange={setShowNewRun}
         title="Start New Run?"
-        description="This will permanently delete all your saved scores and inspection data. This action cannot be undone."
-        confirmLabel="Reset Everything"
+        description="This will finish the current session and create a new one. Your existing scores will be preserved in the session history."
+        confirmLabel="Start New Session"
         destructive
-        onConfirm={() => resetMutation.mutate()}
+        onConfirm={handleNewRun}
       />
     </main>
   );

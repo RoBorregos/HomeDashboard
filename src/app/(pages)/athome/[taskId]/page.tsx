@@ -1,7 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { Role } from "@prisma/client";
+import { useSession, signIn } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
@@ -10,19 +9,21 @@ import { Button } from "~/app/_components/shadcn/ui/button";
 import { Checkbox } from "rbrgs/app/_components/shadcn/ui/checkbox";
 import { Stepper } from "rbrgs/app/_components/athome/Stepper";
 import { api } from "~/trpc/react";
-import { TASK_MAP, computeTotal, type TaskDefinition } from "rbrgs/lib/athome-tasks";
+import { useScoringSession } from "rbrgs/lib/scoring-session-context";
+import { TASK_MAP, computeTotal } from "rbrgs/lib/athome-tasks";
 
 export default function TaskScorePage() {
   const session = useSession();
   const router = useRouter();
   const params = useParams();
   const taskId = params.taskId as string;
+  const { activeSessionId } = useScoringSession();
 
   const task = TASK_MAP.get(taskId);
 
-  const { data: myScores, isLoading } = api.athome.scoreGetMine.useQuery(
-    undefined,
-    { enabled: !!session.data?.user },
+  const { data: sessionScores, isLoading } = api.athome.scoreGetBySession.useQuery(
+    { sessionId: activeSessionId! },
+    { enabled: !!activeSessionId },
   );
 
   const [scoreData, setScoreData] = useState<Record<string, unknown>>({});
@@ -40,7 +41,7 @@ export default function TaskScorePage() {
   // Pre-fill from DB
   useEffect(() => {
     if (!task || initialized) return;
-    const existing = myScores?.find((s) => s.taskId === taskId);
+    const existing = sessionScores?.find((s) => s.taskId === taskId);
     if (existing) {
       const data = existing.scoreData as Record<string, unknown>;
       setScoreData(data);
@@ -65,7 +66,7 @@ export default function TaskScorePage() {
     } else if (!isLoading) {
       setInitialized(true);
     }
-  }, [myScores, isLoading, task, taskId, initialized]);
+  }, [sessionScores, isLoading, task, taskId, initialized]);
 
   const updateField = useCallback((key: string, value: unknown) => {
     setScoreData((prev) => ({ ...prev, [key]: value }));
@@ -99,7 +100,28 @@ export default function TaskScorePage() {
     },
   });
 
-  // Removed role-based guard so judges/admins check is not enforced here
+  // Auth guard
+  if (session.status === "unauthenticated") {
+    return (
+      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-400">Sign in to score tasks.</p>
+        <Button onClick={() => signIn("google")} className="bg-roboblue">
+          Sign in with Google
+        </Button>
+      </main>
+    );
+  }
+
+  if (!activeSessionId) {
+    return (
+      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-400">No active session. Go back to create or select one.</p>
+        <Button onClick={() => router.push("/athome")} variant="outline" className="border-gray-600 text-white">
+          Go to Dashboard
+        </Button>
+      </main>
+    );
+  }
 
   if (!task) {
     return (
@@ -112,6 +134,7 @@ export default function TaskScorePage() {
 
   const handleSave = () => {
     saveMutation.mutate({
+      sessionId: activeSessionId,
       taskId,
       scoreData: fullScoreData,
       totalScore: total,

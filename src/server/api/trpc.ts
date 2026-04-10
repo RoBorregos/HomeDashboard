@@ -13,7 +13,6 @@ import { ZodError } from "zod";
 
 import { getServerAuthSession } from "rbrgs/server/auth";
 import { db } from "rbrgs/server/db";
-import { Role } from "@prisma/client";
 
 /**
  * 1. CONTEXT
@@ -122,25 +121,17 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
   .use(({ ctx, next }) => {
-    // Allow all requests through, even without a session
-    return next({ ctx });
-  });
-
-export const roleProtectionMiddleware = (_roles: Role[]) =>
-  t.middleware(({ ctx, next }) => {
     if (!ctx.session || !ctx.session.user) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: "No session found. Try logging in again.",
+        message: "You must be signed in to perform this action.",
       });
     }
-
-    // Allow all logged-in users through regardless of role
-    return next({ ctx });
+    return next({
+      ctx: {
+        ...ctx,
+        // Infers the `session` as non-nullable
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    });
   });
-
-export const contestantProcedure = publicProcedure;
-
-export const judgeProcedure = publicProcedure;
-
-export const adminProcedure = publicProcedure;

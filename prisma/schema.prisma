@@ -4,10 +4,11 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
+// ── NextAuth Models ────────────────────────────────────────────
 
 model Account {
   id                       String  @id @default(cuid())
@@ -36,60 +37,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model TeamRequest {
-  id            String        @id @default(cuid())
-  userId        String        @unique
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  requestedTeam String
-  message       String?
-  status        RequestStatus @default(PENDING)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-}
-
-enum RequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum InterviewArea {
-  MECHANICS
-  ELECTRONICS
-  PROGRAMMING
-}
-
-model Interviewer {
-  id    String        @id @default(cuid())
-  name  String
-  email String        @unique
-  area  InterviewArea
-  users User[]
-}
-
-model User {
-  id               String           @id @default(cuid())
-  name             String?
-  email            String?          @unique
-  emailVerified    DateTime?
-  image            String?
-  interviewTime    DateTime?
-  interviewArea    InterviewArea?
-  interviewerId    String?
-  role             Role             @default(UNASSIGNED)
-  teamId           String?
-  isStaff            Boolean            @default(false)
-  accounts           Account[]
-  judgedChallengeA   ChallengeA[]
-  judgedChallengeB   ChallengeB[]
-  judgedChallengeC   ChallengeC[]
-  sessions           Session[]
-  team               Team?              @relation(fields: [teamId], references: [id])
-  teamRequests       TeamRequest?
-  interviewer        Interviewer?       @relation(fields: [interviewerId], references: [id])
-  unavailabilities   Unavailability[]
-}
-
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -98,168 +45,60 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model EmailTeam {
-  email String @unique
-  team  String
+// ── User ───────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  accounts        Account[]
+  sessions        Session[]
+  scoringSessions ScoringSession[]
+  taskScores      TaskScore[]
+  inspections     InspectionResult[]
 }
 
-model Judge {
-  email String @unique
-}
+// ── @Home Scoring ──────────────────────────────────────────────
 
-model Admin {
-  email String @unique
-}
+model ScoringSession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
 
-model Team {
-  id             String       @id @default(cuid())
-  name           String       @unique
-  driveLink      String?
-  binnacleLink   String?
-  robotImageLink String?
-  githubLink     String?
-  isActive       Boolean      @default(true)
-  challengeA     ChallengeA[]
-  challengeB     ChallengeB[]
-  challengeC     ChallengeC[]
-  rounds         Round[]
-  members        User[]
-}
-
-model Round {
-  id         String      @id @default(cuid())
-  number     Int
-  isVisible  Boolean     @default(false)
-  teamId     String?
-  challenges Challenge[]
-  team       Team?       @relation(fields: [teamId], references: [id], onDelete: Cascade)
-}
-
-model Challenge {
-  id      String   @id @default(cuid())
-  name    String
-  time    DateTime
-  roundId String
-  round   Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
-}
-
-model ChallengeA {
-  id                String   @id @default(cuid())
-  flagsAccomplished Int
-  finishedTrack     Boolean
-  obtainedBonus     Boolean
-  judgeID           String
-  lackOfProgress    Int
-  points            Int
-  roundTimeSeconds  Int
-  teamId            String
-  createdAt         DateTime @default(now())
-  roundId           String
-  user              User     @relation(fields: [judgeID], references: [id], onDelete: Cascade)
-  team              Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-}
-
-model ChallengeB {
-  id               String    @id @default(cuid())
-  trackPoints      Int
-  patternsPassed   Pattern[]
-  judgeID          String
-  lackOfProgress   Int
-  points           Int
-  roundId          String
-  roundTimeSeconds Int
-  teamId           String
-  createdAt        DateTime  @default(now())
-  user             User      @relation(fields: [judgeID], references: [id], onDelete: Cascade)
-  team             Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
-}
-
-model ChallengeC {
-  id                         String   @id @default(cuid())
-  judgeID                    String
-  lackOfProgress             Int
-  detectedColors             Int
-  passedObstacles            Int
-  obtainedBonus              Boolean
-  finishedTrack              Boolean
-  passedRamp                 Boolean
-  reverseRamp                Boolean
-  points                     Int
-  roundId                    String
-  roundTimeSeconds           Int
-  teamId                     String
-  createdAt                  DateTime @default(now())
-  crossedRampWithoutLOP      Boolean
-  crossedRampWithoutTouching Boolean
-  user                       User     @relation(fields: [judgeID], references: [id], onDelete: Cascade)
-  team                       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-}
-
-model Config {
-  id                 Int     @id @default(autoincrement())
-  freeze             Boolean @default(true)
-  competitionStarted Boolean @default(false)
-  currentRound       Int     @default(1)
-  roundsRevealed     Int     @default(0)
-
-  @@map("config")
-}
-
-model Unavailability {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  startMin  Int
-  endMin    Int
-  createdAt DateTime @default(now())
-
-  @@index([userId, startMin])
-}
-
-enum Role {
-  CONTESTANT
-  JUDGE
-  ADMIN
-  UNASSIGNED
-}
-
-enum Pattern {
-  A3
-  A4
-  B1
-  B2
-  B3
-  C1
-  C2
-  C3
-  D1
-  D2
-  D3
-  D4
-  E1
-  E2
-  E3
-  E4
-  FINISH
-  BONUS
+  scores      TaskScore[]
+  inspections InspectionResult[]
 }
 
 model TaskScore {
   id         String   @id @default(cuid())
   taskId     String
-  judgeId    String
+  userId     String
+  sessionId  String
   scoreData  Json
   totalScore Int
   savedAt    DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@unique([taskId, judgeId])
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session ScoringSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, sessionId])
 }
 
 model InspectionResult {
   id        String   @id @default(cuid())
-  judgeId   String   @unique
+  userId    String
+  sessionId String   @unique
   checklist Json
   passed    Boolean
   updatedAt DateTime @updatedAt
+
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session ScoringSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }

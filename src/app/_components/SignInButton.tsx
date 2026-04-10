@@ -2,8 +2,6 @@
 
 import type { Session } from "next-auth";
 import { signIn, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "r/components/ui/avatar";
 import {
   NavigationMenu,
@@ -15,8 +13,6 @@ import {
 } from "r/components/ui/navigation-menu";
 
 export default function SignInButton({ session }: { session: Session | null }) {
-  const router = useRouter();
-
   if (!session) {
     return (
       <div className="flex items-center justify-end">
@@ -37,9 +33,6 @@ export default function SignInButton({ session }: { session: Session | null }) {
           <NavigationMenuItem>
             <NavigationMenuTrigger
               className="items-center bg-transparent align-middle data-[active]:bg-transparent data-[state=open]:bg-transparent hover:bg-transparent focus:bg-transparent focus:outline-none"
-              onClick={() => {
-                router.push("/account");
-              }}
             >
               <Avatar className="h-[2rem] w-[2rem]">
                 <AvatarImage src={session.user.image ?? undefined} />
@@ -47,20 +40,12 @@ export default function SignInButton({ session }: { session: Session | null }) {
               </Avatar>
               <div className="items-center self-center py-1 text-start align-middle text-white hover:text-rbrgs-blue">
                 <p className="ml-2">{session.user.name}</p>
-                <p className="ml-2 text-sm">
-                  {session.user.role[0]! +
-                    session.user.role.slice(1).toLocaleLowerCase()}
-                </p>
+                <p className="ml-2 text-xs text-gray-400">{session.user.email}</p>
               </div>
             </NavigationMenuTrigger>
             <NavigationMenuContent>
               <NavigationMenuLink className="w-[250px] bg-black" asChild>
                 <div>
-                  <Link href="/account">
-                    <div className="cursor-pointer rounded-md p-2 px-6 text-sm text-white hover:bg-slate-100 hover:bg-opacity-10">
-                      Account
-                    </div>
-                  </Link>
                   <div
                     className="cursor-pointer rounded-md p-2 px-6 text-sm text-white hover:bg-slate-100 hover:bg-opacity-10"
                     onClick={() => signOut()}

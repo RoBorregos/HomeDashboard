@@ -9,7 +9,6 @@ import {
   SheetTrigger,
   SheetClose,
 } from "r/components/ui/sheet";
-import { Role } from "@prisma/client";
 import { StaticImport } from "next/dist/shared/lib/get-img-props";
 
 export default function NavDropdown({ session }: { session: Session | null }) {
@@ -38,18 +37,31 @@ export default function NavDropdown({ session }: { session: Session | null }) {
               Inspection
             </Link>
           </SheetClose>
-          {session?.user.role === Role.ADMIN && (
-            <SheetClose asChild>
-              <Link href="/admin" className="w-full text-lg">
-                Admin
-              </Link>
-            </SheetClose>
-          )}
+          <SheetClose asChild>
+            <Link href="/athome/sessions" className="w-full text-lg">
+              Sessions
+            </Link>
+          </SheetClose>
+          <SheetClose asChild>
+            <Link href="/athome/admin" className="w-full text-lg">
+              Overview
+            </Link>
+          </SheetClose>
           <SheetClose asChild>
             <Link href="https://www.roborregos.com" className="w-full text-lg">
               About us
             </Link>
           </SheetClose>
+          {session && (
+            <div className="mt-4 border-t border-gray-700 pt-4">
+              <SignInButton session={session} />
+            </div>
+          )}
+          {!session && (
+            <div className="mt-4 border-t border-gray-700 pt-4">
+              <SignInButton session={null} />
+            </div>
+          )}
         </SheetContent>
       </Sheet>
     </div>

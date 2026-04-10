@@ -1,7 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { Role } from "@prisma/client";
+import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -9,15 +8,17 @@ import Header from "rbrgs/app/_components/header";
 import { Button } from "~/app/_components/shadcn/ui/button";
 import { Checkbox } from "rbrgs/app/_components/shadcn/ui/checkbox";
 import { api } from "~/trpc/react";
+import { useScoringSession } from "rbrgs/lib/scoring-session-context";
 import { INSPECTION_SECTIONS, ALL_INSPECTION_KEYS } from "rbrgs/lib/athome-tasks";
 
 export default function InspectionPage() {
   const session = useSession();
   const router = useRouter();
+  const { activeSessionId } = useScoringSession();
 
-  const { data: existing, isLoading } = api.athome.inspectionGetMine.useQuery(
-    undefined,
-    { enabled: !!session.data?.user },
+  const { data: existing, isLoading } = api.athome.inspectionGetBySession.useQuery(
+    { sessionId: activeSessionId! },
+    { enabled: !!activeSessionId },
   );
 
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
@@ -60,7 +61,28 @@ export default function InspectionPage() {
     setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // No role checks - page is public
+  // Auth guard
+  if (session.status === "unauthenticated") {
+    return (
+      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-400">Sign in to manage inspections.</p>
+        <Button onClick={() => signIn("google")} className="bg-roboblue">
+          Sign in with Google
+        </Button>
+      </main>
+    );
+  }
+
+  if (!activeSessionId) {
+    return (
+      <main className="mt-[4rem] min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-400">No active session.</p>
+        <Button onClick={() => router.push("/athome")} variant="outline" className="border-gray-600 text-white">
+          Go to Dashboard
+        </Button>
+      </main>
+    );
+  }
 
   return (
     <main className="mt-[4rem] min-h-screen bg-black text-white">
@@ -116,7 +138,13 @@ export default function InspectionPage() {
           </span>
 
           <Button
-            onClick={() => saveMutation.mutate({ checklist, passed })}
+            onClick={() =>
+              saveMutation.mutate({
+                sessionId: activeSessionId,
+                checklist,
+                passed,
+              })
+            }
             disabled={saveMutation.isPending}
             className="w-full max-w-xs"
           >
