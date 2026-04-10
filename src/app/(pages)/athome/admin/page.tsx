@@ -95,8 +95,8 @@ export default function AtHomeAdminPage() {
                 let judgeBestTotal = 0;
                 judgeBestMap.forEach((v) => (judgeBestTotal += v));
 
-                const inspectionPassed = j.inspections?.passed ?? false;
-                const hasInspection = !!j.inspections;
+                const inspectionPassed = j.inspections[0]?.passed ?? false;
+                const hasInspection = j.inspections.length > 0;
 
                 return (
                   <tr key={j.id} className="border-b border-gray-700/30 hover:bg-white/5 transition-colors">
