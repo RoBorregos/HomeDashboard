@@ -1,7 +1,6 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Role } from "@prisma/client";
 import LoginText from "../../_components/login-text";
 
 export default function AccountPage() {
@@ -27,6 +26,7 @@ export default function AccountPage() {
       <div className="rounded-xl border border-gray-700 bg-gray-900/50 p-10 text-white backdrop-blur-md">
         <div className="flex items-center gap-6 mb-8 border-b border-gray-700 pb-8">
           {session.user.image && (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img src={session.user.image} alt="" className="h-16 w-16 rounded-full border-2 border-roboblue" />
           )}
           <div>

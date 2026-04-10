@@ -103,6 +103,7 @@ export default function AtHomeAdminPage() {
                     <td className="p-4 text-white whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         {j.user.image ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={j.user.image}
                             alt=""
@@ -133,7 +134,7 @@ export default function AtHomeAdminPage() {
                                 : "text-gray-700"
                             }`}
                         >
-                          {score !== undefined ? score : "—"}
+                          {score ?? "—"}
                         </td>
                       );
                     })}

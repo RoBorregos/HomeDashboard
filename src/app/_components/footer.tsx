@@ -1,7 +1,7 @@
 import Image from "next/image";
 import robologo from "../../../public/images/white-logo.png";
 import Link from "next/link";
-import { Facebook, Instagram, LucideYoutube, YoutubeIcon } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 import { GitHubLogoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
 import YoutubeLogo from "rbrgs/app/_components/YoutubeLogo";
 

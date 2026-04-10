@@ -5,7 +5,7 @@ import { Role } from "@prisma/client";
 import Link from "next/link";
 import Header from "rbrgs/app/_components/header";
 import { api } from "~/trpc/react";
-import { TASKS, ALL_INSPECTION_KEYS } from "rbrgs/lib/athome-tasks";
+import { TASKS } from "rbrgs/lib/athome-tasks";
 import { useState, useEffect } from "react";
 
 export default function AtHomeDashboard() {

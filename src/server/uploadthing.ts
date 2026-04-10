@@ -6,12 +6,10 @@ function createRouter() {
     return {} as FileRouter;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports */
   const { createUploadthing } = require("uploadthing/next") as typeof import("uploadthing/next");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { getServerAuthSession } = require("./auth") as typeof import("./auth");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { db } = require("./db") as typeof import("./db");
+  /* eslint-enable @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports */
 
   const f = createUploadthing();
 
@@ -37,3 +35,4 @@ function createRouter() {
 export const ourFileRouter = createRouter();
 
 export type OurFileRouter = typeof ourFileRouter;
+

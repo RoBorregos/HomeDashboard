@@ -2,14 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import menu from "rbrgs/../public/images/menu.svg";
 import SignInButton from "./SignInButton";
-import { Session } from "next-auth";
+import type { Session } from "next-auth";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
   SheetClose,
 } from "r/components/ui/sheet";
-import { StaticImport } from "next/dist/shared/lib/get-img-props";
+import type { StaticImport } from "next/dist/shared/lib/get-img-props";
 
 export default function NavDropdown({ session }: { session: Session | null }) {
   return (

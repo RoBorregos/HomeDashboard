@@ -9,7 +9,7 @@ import Google from "next-auth/providers/google";
 
 import { env } from "rbrgs/env";
 import { db } from "rbrgs/server/db";
-import { Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
