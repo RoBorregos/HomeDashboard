@@ -1,9 +1,8 @@
 "use client";
 
-import { getServerAuthSession } from "rbrgs/server/auth";
-import LoginText from "../../_components/login-text";
-import { Role } from "@prisma/client";
 import { useSession } from "next-auth/react";
+import { Role } from "@prisma/client";
+import LoginText from "../../_components/login-text";
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
@@ -23,39 +22,33 @@ export default function AccountPage() {
 
   return (
     <div className="mt-[4rem] h-max bg-black p-10 font-mono text-white">
-      <h1 className="font-anton text-[3vw] mb-8">Account</h1>
+      <h1 className="font-anton text-[3vw] mb-8 uppercase tracking-widest text-roboblue">Your Profile</h1>
 
-      <div className="rounded-md bg-gradient-to-r from-blue-rbrgs to-black p-10 text-white">
-        <p className="mb-4">
-          You are logged in as <span className="text-roboblue font-bold">{session.user.email}</span> - {session.user.name}
-        </p>
-        
-        {session.user.role === Role.JUDGE && (
-          <div className="mt-4 p-4 border border-white/10 rounded-lg">
-            <p className="text-sm text-gray-400">ROLE: JUDGE</p>
-            <p className="mt-2">
-              You can submit scores for @Home tasks.
-            </p>
+      <div className="rounded-xl border border-gray-700 bg-gray-900/50 p-10 text-white backdrop-blur-md">
+        <div className="flex items-center gap-6 mb-8 border-b border-gray-700 pb-8">
+          {session.user.image && (
+            <img src={session.user.image} alt="" className="h-16 w-16 rounded-full border-2 border-roboblue" />
+          )}
+          <div>
+            <h2 className="text-2xl font-bold">{session.user.name}</h2>
+            <p className="text-gray-400">{session.user.email}</p>
           </div>
-        )}
+        </div>
 
-        {session.user.role === Role.ADMIN && (
-          <div className="mt-4 p-4 border border-emerald-500/20 rounded-lg bg-emerald-500/5">
-            <p className="text-sm text-emerald-400 font-bold tracking-widest">ADMINISTRATOR</p>
-            <p className="mt-2 text-gray-300">
-              You have full access to competition management and overview tools.
-            </p>
-          </div>
-        )}
+        <div className="space-y-6">
+          <section>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2">Access Level</p>
+            <div className="inline-block px-4 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase">
+              {session.user.role ?? "JUDGE"}
+            </div>
+          </section>
 
-        {session.user.role === Role.UNASSIGNED && (
-          <div className="mt-4 p-4 border border-yellow-500/20 rounded-lg bg-yellow-500/5">
-            <p className="text-sm text-yellow-400 font-bold">LIMITED ACCESS</p>
-            <p className="mt-2 text-gray-400">
-              Your account is not assigned to a specific role. Please contact an admin if you believe this is an error.
-            </p>
-          </div>
-        )}
+          <section className="pt-4">
+             <p className="text-sm text-gray-400">
+               Logged in via NextAuth. Your session data is used to record judge attempts for competition tasks.
+             </p>
+          </section>
+        </div>
       </div>
     </div>
   );
