@@ -1,5 +1,12 @@
 import { createCallerFactory, createTRPCRouter } from "rbrgs/server/api/trpc";
 import { athomeRouter } from "./routers/athome";
+import { adminRouter } from "./routers/admin";
+import { configRouter } from "./routers/config";
+import { interviewerRouter } from "./routers/interviewer";
+import { judgeRouter } from "./routers/judge";
+import { rolesRouter } from "./routers/roles";
+import { scoreboardRouter } from "./routers/scoreboard";
+import { teamRouter } from "./routers/team";
 
 /**
  * This is the primary router for your server.
@@ -8,6 +15,13 @@ import { athomeRouter } from "./routers/athome";
  */
 export const appRouter = createTRPCRouter({
   athome: athomeRouter,
+  admin: adminRouter,
+  config: configRouter,
+  interviewer: interviewerRouter,
+  judge: judgeRouter,
+  roles: rolesRouter,
+  scoreboard: scoreboardRouter,
+  team: teamRouter,
 });
 
 // export type definition of API
