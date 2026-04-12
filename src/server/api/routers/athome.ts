@@ -3,51 +3,43 @@ import type { Prisma } from "@prisma/client";
 import {
   createTRPCRouter,
   judgeProcedure,
-  adminProcedure,
+  publicProcedure,
+  protectedProcedure,
 } from "rbrgs/server/api/trpc";
 
-const ANON_JUDGE_ID = "anonymous";
-
 export const athomeRouter = createTRPCRouter({
-  // ── Scores ──────────────────────────────────────────────────
+  /** Save or update a task score */
   scoreSave: judgeProcedure
     .input(
       z.object({
         taskId: z.string(),
+        label: z.string().optional(),
         scoreData: z.record(z.unknown()),
         totalScore: z.number(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
-      return ctx.db.taskScore.upsert({
-        where: {
-          taskId_judgeId: {
-            taskId: input.taskId,
-            judgeId,
-          },
-        },
-        create: {
+      return ctx.db.taskScore.create({
+        data: {
           taskId: input.taskId,
-          judgeId,
-          scoreData: input.scoreData as Prisma.InputJsonValue,
-          totalScore: input.totalScore,
-        },
-        update: {
+          userId: ctx.session.user.id,
+          label: input.label ?? null,
           scoreData: input.scoreData as Prisma.InputJsonValue,
           totalScore: input.totalScore,
         },
       });
     }),
 
-  scoreGetMine: judgeProcedure.query(async ({ ctx }) => {
-    const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
+  /** Get my scores (renamed to match original UI code) */
+  scoreGetMine: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.taskScore.findMany({
-      where: { judgeId },
+      where: { userId: ctx.session.user.id },
+      orderBy: { savedAt: "desc" },
     });
   }),
 
-  scoreGetBestPerTask: judgeProcedure.query(async ({ ctx }) => {
+  /** Get best per task (all users) */
+  scoreGetBestPerTask: publicProcedure.query(async ({ ctx }) => {
     const all = await ctx.db.taskScore.findMany({
       select: { taskId: true, totalScore: true },
     });
@@ -59,13 +51,19 @@ export const athomeRouter = createTRPCRouter({
     return Object.fromEntries(best);
   }),
 
-  scoreGetAll: adminProcedure.query(async ({ ctx }) => {
+  /** Get all scores (summary view) */
+  scoreGetAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.taskScore.findMany({
-      orderBy: { taskId: "asc" },
+      orderBy: { savedAt: "desc" },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
     });
   }),
 
-  // ── Inspection ──────────────────────────────────────────────
+  // ── Inspection ──────────────────────────────────────────────────
+
+  /** Save inspection */
   inspectionSave: judgeProcedure
     .input(
       z.object({
@@ -74,11 +72,10 @@ export const athomeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
       return ctx.db.inspectionResult.upsert({
-        where: { judgeId },
+        where: { userId: ctx.session.user.id },
         create: {
-          judgeId,
+          userId: ctx.session.user.id,
           checklist: input.checklist as Prisma.InputJsonValue,
           passed: input.passed,
         },
@@ -89,26 +86,41 @@ export const athomeRouter = createTRPCRouter({
       });
     }),
 
-  inspectionGetMine: judgeProcedure.query(async ({ ctx }) => {
-    const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
+  /** Get my inspection (renamed to match original UI code) */
+  inspectionGetMine: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.inspectionResult.findUnique({
-      where: { judgeId },
+      where: { userId: ctx.session.user.id },
     });
   }),
 
-  inspectionGetAll: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.inspectionResult.findMany();
+  /** Get all inspections */
+  inspectionGetAll: publicProcedure.query(async ({ ctx }) => {
+    return ctx.db.inspectionResult.findMany({
+      include: {
+        user: { select: { name: true, email: true, image: true } },
+      },
+    });
   }),
 
-  // ── Reset ───────────────────────────────────────────────────
-  resetAll: judgeProcedure.mutation(async ({ ctx }) => {
-    const judgeId = ctx.session?.user?.id ?? ANON_JUDGE_ID;
-    await ctx.db.taskScore.deleteMany({
-      where: { judgeId },
+  /** Legacy compat query */
+  getAllSessions: publicProcedure.query(async ({ ctx }) => {
+    // This is a complex query to mock the 'sessions' structure from the old admin view
+    const users = await ctx.db.user.findMany({
+        where: { taskScores: { some: {} } },
+        include: {
+            taskScores: true,
+            inspectionResult: true
+        }
     });
-    await ctx.db.inspectionResult.deleteMany({
-      where: { judgeId },
-    });
-    return { success: true };
-  }),
+
+    return users.map(u => ({
+        id: u.id,
+        user: u,
+        label: "Judge Session",
+        startedAt: u.taskScores[0]?.savedAt ?? new Date(),
+        finishedAt: u.taskScores.length > 0 ? new Date() : null,
+        scores: u.taskScores,
+        inspections: u.inspectionResult
+    }));
+  })
 });

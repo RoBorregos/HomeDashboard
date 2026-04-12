@@ -1,4 +1,3 @@
-import { z } from "zod";
 
 import {
   createTRPCRouter,
@@ -6,7 +5,7 @@ import {
   roleProtectionMiddleware,
 } from "rbrgs/server/api/trpc";
 
-import { Prisma, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 
 export const rolesRouter = createTRPCRouter({
   getRole: protectedProcedure.query(async ({ ctx }) => {

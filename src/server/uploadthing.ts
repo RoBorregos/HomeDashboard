@@ -6,12 +6,10 @@ function createRouter() {
     return {} as FileRouter;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports */
   const { createUploadthing } = require("uploadthing/next") as typeof import("uploadthing/next");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { getServerAuthSession } = require("./auth") as typeof import("./auth");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { db } = require("./db") as typeof import("./db");
+  /* eslint-enable @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports */
 
   const f = createUploadthing();
 
@@ -31,46 +29,10 @@ function createRouter() {
         console.log("file url", file.ufsUrl);
         return { uploadedBy: metadata.userId };
       }),
-
-    binnacleUploader: f({
-      pdf: { maxFileSize: "4MB", maxFileCount: 1 },
-    })
-      .middleware(async () => {
-        const session = await getServerAuthSession();
-        if (!session?.user?.teamId) {
-          throw new Error("User isn't in a team");
-        }
-        return { teamId: session.user.teamId };
-      })
-      .onUploadComplete(async ({ metadata, file }) => {
-        await db.team.update({
-          where: { id: metadata.teamId },
-          data: { binnacleLink: file.ufsUrl },
-        });
-        return { binnacleLink: file.ufsUrl, teamId: metadata.teamId };
-      }),
-
-    robotImageUploader: f({
-      "image/jpeg": { maxFileSize: "4MB", maxFileCount: 1 },
-      "image/png": { maxFileSize: "4MB", maxFileCount: 1 },
-    })
-      .middleware(async () => {
-        const session = await getServerAuthSession();
-        if (!session?.user?.teamId) {
-          throw new Error("User isn't in a team");
-        }
-        return { teamId: session.user.teamId };
-      })
-      .onUploadComplete(async ({ metadata, file }) => {
-        await db.team.update({
-          where: { id: metadata.teamId },
-          data: { robotImageLink: file.ufsUrl },
-        });
-        return { robotImageLink: file.ufsUrl, teamId: metadata.teamId };
-      }),
   } satisfies FileRouter;
 }
 
 export const ourFileRouter = createRouter();
 
 export type OurFileRouter = typeof ourFileRouter;
+

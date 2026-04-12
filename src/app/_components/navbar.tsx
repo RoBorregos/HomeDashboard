@@ -4,13 +4,9 @@ import NavDropdown from "./navDropdown";
 import Link from "next/link";
 import Image from "next/image";
 import robologo from "r/../public/images/white-logo.png";
-import { Role } from "@prisma/client";
 
 export default async function Navbar() {
   const session = await getServerAuthSession();
-
-  const canJudge =
-    session?.user.role === Role.JUDGE || session?.user.role === Role.ADMIN;
 
   return (
     <nav className="fixed top-0 z-50 grid h-[4rem] w-screen grid-cols-2 items-center bg-black px-[3rem] font-archivo lg:grid-cols-[auto_1fr_auto]">
