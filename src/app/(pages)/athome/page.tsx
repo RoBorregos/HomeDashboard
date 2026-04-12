@@ -5,36 +5,47 @@ import { Role } from "@prisma/client";
 import Link from "next/link";
 import Header from "rbrgs/app/_components/header";
 import { api } from "~/trpc/react";
-import { TASKS, INSPECTION_SECTIONS, ALL_INSPECTION_KEYS } from "rbrgs/lib/athome-tasks";
+import { TASKS } from "rbrgs/lib/athome-tasks";
+import { useState, useEffect } from "react";
 
 export default function AtHomeDashboard() {
   const session = useSession();
+  const [sessionScoreIds, setSessionScoreIds] = useState<string[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load session storage on mount
+  useEffect(() => {
+    const ids = JSON.parse(sessionStorage.getItem("athome_session_scores") ?? "[]") as string[];
+    setSessionScoreIds(ids);
+    setIsLoaded(true);
+  }, []);
 
   const { data: myScores } = api.athome.scoreGetMine.useQuery(undefined, {
-    enabled: !!session.data?.user,
+    enabled: !!session.data?.user && isLoaded,
   });
+  
   const { data: bestPerTask } = api.athome.scoreGetBestPerTask.useQuery(undefined, {
-    enabled: !!session.data?.user,
+    enabled: !!session.data?.user && isLoaded,
   });
+
   const { data: myInspection } = api.athome.inspectionGetMine.useQuery(undefined, {
-    enabled: !!session.data?.user,
+    enabled: !!session.data?.user && isLoaded,
   });
 
-  // No role checks - page is public
+  // Filter: ONLY show scores from the current browser session
+  const currentSessionScores = (myScores ?? []).filter(s => sessionScoreIds.includes(s.id));
+  const myScoreMap = new Map(currentSessionScores.map((s) => [s.taskId, s]));
 
-  const myScoreMap = new Map(
-    (myScores ?? []).map((s) => [s.taskId, s]),
-  );
+  const inspectionInSession = myInspection && sessionScoreIds.includes(myInspection.id);
+  const inspectionPassed = inspectionInSession && myInspection.passed;
 
   const tasksCompleted = TASKS.filter((t) => myScoreMap.has(t.id)).length;
+  
+  // Best overall still shows the global best (as a motivator)
   const totalBestScore = Object.values(bestPerTask ?? {}).reduce(
     (sum: number, v) => sum + v,
     0,
   );
-
-  const checklist = (myInspection?.checklist ?? {}) as Record<string, boolean>;
-  const checkedCount = ALL_INSPECTION_KEYS.filter((k) => checklist[k]).length;
-  const inspectionPassed = myInspection?.passed ?? false;
 
   const isAdmin = session.data?.user?.role === Role.ADMIN;
 
@@ -61,19 +72,10 @@ export default function AtHomeDashboard() {
               </div>
               <div className="rounded-lg bg-gray-800 px-4 py-2 text-center">
                 <p className="text-xs text-gray-400">Tasks Scored</p>
-                <p className="text-xl font-bold text-white">{tasksCompleted}/6</p>
+                   <p className="text-xl font-bold text-white">{tasksCompleted}/6</p>
+                   {tasksCompleted > 0 && <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1 rounded">SESSION</span>}
+                </div>
               </div>
-              <div className="rounded-lg bg-gray-800 px-4 py-2 text-center">
-                <p className="text-xs text-gray-400">Inspection</p>
-                <p
-                  className={`text-xl font-bold ${
-                    inspectionPassed ? "text-emerald-400" : "text-yellow-400"
-                  }`}
-                >
-                  {inspectionPassed ? "PASS" : "NOT READY"}
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -86,21 +88,21 @@ export default function AtHomeDashboard() {
             <div className="group cursor-pointer rounded-xl border border-gray-700 bg-gray-900/50 p-5 transition-all hover:border-roboblue hover:shadow-lg hover:shadow-roboblue/10">
               <div className="flex items-center justify-between">
                 <div className="text-2xl">🛡️</div>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    inspectionPassed
-                      ? "bg-emerald-400/20 text-emerald-400"
-                      : "bg-yellow-400/20 text-yellow-400"
-                  }`}
-                >
-                  {inspectionPassed ? "PASS" : "NOT READY"}
-                </span>
+                {inspectionInSession ? (
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${inspectionPassed ? "bg-emerald-400/20 text-emerald-400" : "bg-yellow-400/20 text-yellow-400"}`}>
+                    {inspectionPassed ? "PASS" : "FAIL"}
+                  </span>
+                ) : (
+                  <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-gray-800 text-gray-400">
+                    PENDING
+                  </span>
+                )}
               </div>
               <h3 className="mt-3 text-lg font-bold text-white">
                 Robot Inspection
               </h3>
               <p className="mt-1 text-sm text-gray-400">
-                {checkedCount}/{ALL_INSPECTION_KEYS.length} checked &middot; Pass/Fail
+                Safety & technical check
               </p>
             </div>
           </Link>
@@ -108,7 +110,6 @@ export default function AtHomeDashboard() {
           {/* Task Cards */}
           {TASKS.map((task) => {
             const saved = myScoreMap.get(task.id);
-            const best = bestPerTask?.[task.id];
             return (
               <Link key={task.id} href={`/athome/${task.id}`}>
                 <div className="group cursor-pointer rounded-xl border border-gray-700 bg-gray-900/50 p-5 transition-all hover:border-roboblue hover:shadow-lg hover:shadow-roboblue/10">
@@ -117,7 +118,7 @@ export default function AtHomeDashboard() {
                       ⏱ {task.timeLimit}
                     </span>
                     {saved && (
-                      <span className="text-emerald-400 text-lg">✓</span>
+                      <span className="text-emerald-400 text-lg animate-in zoom-in-50 duration-300">✓</span>
                     )}
                   </div>
                   <h3 className="mt-2 text-lg font-bold text-white">
@@ -128,12 +129,7 @@ export default function AtHomeDashboard() {
                   </p>
                   {saved && (
                     <p className="mt-1 text-sm font-semibold text-emerald-400">
-                      My score: {saved.totalScore}
-                    </p>
-                  )}
-                  {best !== undefined && (
-                    <p className="mt-0.5 text-xs text-gray-500">
-                      Best: {best}
+                      Score: {saved.totalScore}
                     </p>
                   )}
                 </div>
@@ -142,22 +138,22 @@ export default function AtHomeDashboard() {
           })}
         </div>
 
-        {/* Links */}
-        <div className="mt-6 flex flex-wrap gap-4 justify-center">
-          <Link
-            href="/athome/results"
-            className="rounded-lg border border-gray-600 px-6 py-2 text-sm text-gray-300 hover:bg-gray-800 transition-colors"
-          >
-            View Results
-          </Link>
-          {isAdmin && (
+        {/* Historical Navigation */}
+        <div className="mt-8 flex flex-col items-center gap-4">
+          <div className="flex flex-wrap gap-4 justify-center">
             <Link
-              href="/athome/admin"
-              className="rounded-lg border border-gray-600 px-6 py-2 text-sm text-gray-300 hover:bg-gray-800 transition-colors"
+              href="/athome/results"
+              className="rounded-lg border border-gray-600 px-8 py-3 text-sm font-bold text-white hover:bg-gray-800 transition-colors bg-white/5 backdrop-blur-sm"
             >
-              Admin Panel
+              MY RESULTS
             </Link>
-          )}
+            <Link
+              href="/athome/overview"
+              className="rounded-lg border border-gray-600 px-8 py-3 text-sm font-bold text-gray-400 hover:bg-gray-800 transition-colors"
+            >
+              OVERVIEW
+            </Link>
+          </div>
         </div>
       </div>
     </main>

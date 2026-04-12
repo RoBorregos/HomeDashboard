@@ -2,15 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import menu from "rbrgs/../public/images/menu.svg";
 import SignInButton from "./SignInButton";
-import { Session } from "next-auth";
+import type { Session } from "next-auth";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
   SheetClose,
 } from "r/components/ui/sheet";
-import { Role } from "@prisma/client";
-import { StaticImport } from "next/dist/shared/lib/get-img-props";
+import type { StaticImport } from "next/dist/shared/lib/get-img-props";
 
 export default function NavDropdown({ session }: { session: Session | null }) {
   return (
@@ -34,22 +33,25 @@ export default function NavDropdown({ session }: { session: Session | null }) {
             </Link>
           </SheetClose>
           <SheetClose asChild>
-            <Link href="/athome/inspection" className="w-full text-lg">
-              Inspection
+            <Link href="/athome/overview" className="w-full text-lg">
+              Overview
             </Link>
           </SheetClose>
-          {session?.user.role === Role.ADMIN && (
-            <SheetClose asChild>
-              <Link href="/admin" className="w-full text-lg">
-                Admin
-              </Link>
-            </SheetClose>
-          )}
           <SheetClose asChild>
             <Link href="https://www.roborregos.com" className="w-full text-lg">
               About us
             </Link>
           </SheetClose>
+          {session && (
+            <div className="mt-4 border-t border-gray-700 pt-4">
+              <SignInButton session={session} />
+            </div>
+          )}
+          {!session && (
+            <div className="mt-4 border-t border-gray-700 pt-4">
+              <SignInButton session={null} />
+            </div>
+          )}
         </SheetContent>
       </Sheet>
     </div>
