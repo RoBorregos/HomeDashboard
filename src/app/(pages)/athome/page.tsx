@@ -142,22 +142,21 @@ export default function AtHomeDashboard() {
           })}
         </div>
 
-        {/* Links */}
-        <div className="mt-6 flex flex-wrap gap-4 justify-center">
-          <Link
-            href="/athome/results"
-            className="rounded-lg border border-gray-600 px-6 py-2 text-sm text-gray-300 hover:bg-gray-800 transition-colors"
-          >
-            View Results
-          </Link>
-          {isAdmin && (
+        <div className="mt-8 flex flex-col items-center gap-4">
+          <div className="flex flex-wrap gap-4 justify-center">
             <Link
-              href="/athome/admin"
-              className="rounded-lg border border-gray-600 px-6 py-2 text-sm text-gray-300 hover:bg-gray-800 transition-colors"
+              href="/athome/results"
+              className="rounded-lg border border-gray-600 px-8 py-3 text-sm font-bold text-white hover:bg-gray-800 transition-colors bg-white/5 backdrop-blur-sm"
             >
-              Admin Panel
+              MY RESULTS
             </Link>
-          )}
+            <Link
+              href="/athome/overview"
+              className="rounded-lg border border-gray-600 px-8 py-3 text-sm font-bold text-gray-400 hover:bg-gray-800 transition-colors"
+            >
+              OVERVIEW
+            </Link>
+          </div>
         </div>
       </div>
     </main>

@@ -34,22 +34,18 @@ export default function NavDropdown({ session }: { session: Session | null }) {
             </Link>
           </SheetClose>
           <SheetClose asChild>
-            <Link href="/athome/inspection" className="w-full text-lg">
-              Inspection
+            <Link href="/athome/overview" className="w-full text-lg">
+              Overview
             </Link>
           </SheetClose>
-          {session?.user.role === Role.ADMIN && (
-            <SheetClose asChild>
-              <Link href="/admin" className="w-full text-lg">
-                Admin
-              </Link>
-            </SheetClose>
-          )}
           <SheetClose asChild>
             <Link href="https://www.roborregos.com" className="w-full text-lg">
               About us
             </Link>
           </SheetClose>
+          <div className="mt-4 border-t border-gray-700 pt-4">
+            <SignInButton session={session} />
+          </div>
         </SheetContent>
       </Sheet>
     </div>
