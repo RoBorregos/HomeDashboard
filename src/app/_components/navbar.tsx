@@ -20,8 +20,7 @@ export default async function Navbar() {
       <div className="ml-10 hidden w-full items-center justify-start gap-x-10 text-white lg:flex xl:text-xl">
         <Link href="/athome">Dashboard</Link>
         <Link href="/athome/results">Results</Link>
-        <Link href="/athome/inspection">Inspection</Link>
-        <Link href="/athome/admin">Overview</Link>
+        <Link href="/athome/overview">Overview</Link>
         <Link href="https://www.roborregos.com">About us</Link>
       </div>
       <div className="hidden lg:block">

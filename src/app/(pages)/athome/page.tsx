@@ -145,16 +145,14 @@ export default function AtHomeDashboard() {
               href="/athome/results"
               className="rounded-lg border border-gray-600 px-8 py-3 text-sm font-bold text-white hover:bg-gray-800 transition-colors bg-white/5 backdrop-blur-sm"
             >
-              MY RESULTS (ALL HISTORY)
+              MY RESULTS
             </Link>
-            {isAdmin && (
-              <Link
-                href="/athome/admin"
-                className="rounded-lg border border-gray-600 px-8 py-3 text-sm font-bold text-gray-400 hover:bg-gray-800 transition-colors"
-              >
-                ADMIN PANEL
-              </Link>
-            )}
+            <Link
+              href="/athome/overview"
+              className="rounded-lg border border-gray-600 px-8 py-3 text-sm font-bold text-gray-400 hover:bg-gray-800 transition-colors"
+            >
+              OVERVIEW
+            </Link>
           </div>
         </div>
       </div>

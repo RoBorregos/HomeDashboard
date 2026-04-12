@@ -6,7 +6,7 @@ import { Button } from "~/app/_components/shadcn/ui/button";
 import { api } from "~/trpc/react";
 import { TASKS } from "rbrgs/lib/athome-tasks";
 
-export default function AtHomeAdminPage() {
+export default function OverviewPage() {
   const session = useSession();
 
   const { data: userData } = api.athome.getAllSessions.useQuery(undefined, {
@@ -43,7 +43,7 @@ export default function AtHomeAdminPage() {
 
       <div className="mx-auto max-w-6xl px-4 pb-12">
         <div className="mb-8 rounded-xl border border-gray-700 bg-gray-900/50 p-6">
-          <h2 className="text-xl font-bold mb-2">Final Standings (Best per Judge)</h2>
+          <h2 className="text-xl font-bold mb-2">Final Standings</h2>
           <p className="text-sm text-gray-500">
             Current consolidated results. Each judge shows their best recording per task.
           </p>
