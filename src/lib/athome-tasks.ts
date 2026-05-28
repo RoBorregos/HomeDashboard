@@ -103,7 +103,9 @@ export const TASKS: TaskDefinition[] = [
       {
         title: "Guiding",
         items: [
-          { key: "grab_bag", label: "Grab the bag via natural handover from the guest", type: "checkbox", points: 50 },
+          { key: "grab_bag", label: "Receive the bag from the guest via handover", type: "checkbox", points: 50 },
+          { key: "ask_place_bag", label: "Requesting handover assistance from the guest", type: "checkbox", points: -25 },
+          { key: "bag_on_structure", label: "Bag placed on the robot structure instead of being handed over", type: "checkbox", points: -50 },
           { key: "follow_host", label: "Following the host to the bag drop area", type: "checkbox", points: 200 },
           { key: "drop_bag_following", label: "Drop the bag while following the host", type: "checkbox", points: -50 },
           { key: "rediscover_operator", label: "Rediscovering the operator by natural interaction", type: "checkbox", points: -50 },
@@ -117,8 +119,7 @@ export const TASKS: TaskDefinition[] = [
         items: [
           { key: "wrong_guest_info", label: "Wrong guest information was memorized", type: "stepper", points: -40, max: 4 },
           { key: "alt_hri", label: "Alternative HRI", type: "stepper", points: -20, max: 6 },
-          { key: "not_recognizing", label: "Not recognizing people", type: "stepper", points: -200, max: 2 },
-          { key: "ask_place_bag", label: "Ask the guest to place the bag somewhere on the robot", type: "checkbox", points: -25 },
+          { key: "not_recognizing", label: "Not acknowledging people", type: "stepper", points: -200, max: 2 },
         ],
       },
       {
@@ -188,6 +189,8 @@ export const TASKS: TaskDefinition[] = [
           { key: "human_reposition", label: "Human assistance: object repositioned by a person", type: "stepper", points: -30, max: 12 },
           { key: "human_handover", label: "Human assistance: handover", type: "stepper", points: -100, max: 24 },
           { key: "human_env_changes", label: "Human assistance: environment changes (per item)", type: "checkbox", points: -40 },
+          { key: "human_open_milk", label: "Human assistance: opening milk container", type: "checkbox", points: 0 },
+          { key: "human_dishwasher_move", label: "Human assistance: moving dishwasher door or rack", type: "checkbox", points: 0 },
         ],
       },
       {
@@ -257,6 +260,7 @@ export const TASKS: TaskDefinition[] = [
           { key: "pick_basket", label: "Picking up a piece of clothing from the basket", type: "checkbox", points: 100 },
           { key: "pick_multiple", label: "Picking up multiple at once", type: "checkbox", points: -100 },
           { key: "fold_clothing", label: "Folding a piece of clothing", type: "checkbox", points: 800 },
+          { key: "quality_penalty_main", label: "Quality penalties (main fold)", type: "checkbox", points: -800 },
           { key: "human_flatten_main", label: "Human assistance: Flattening/Arranging clothing before folding", type: "checkbox", points: -200 },
           { key: "human_fold_main", label: "Human assistance during folding (max penalty)", type: "checkbox", points: -800 },
         ],
@@ -270,9 +274,16 @@ export const TASKS: TaskDefinition[] = [
           { key: "basket_transport", label: "Using the basket for transportation", type: "checkbox", points: 300 },
           { key: "laundry_dropped", label: "Laundry is dropped or otherwise lost during transportation", type: "checkbox", points: -200 },
           { key: "fold_additional", label: "Folding additional clothes (per item)", type: "stepper", points: 400, max: 5 },
-          { key: "human_flatten_extra", label: "Human assistance: Flattening/Arranging (extra)", type: "stepper", points: -200, max: 5 },
+          { key: "quality_penalty_extra", label: "Quality penalties (extra fold, per item)", type: "stepper", points: -400, max: 5 },
+          { key: "human_flatten_extra", label: "Human assistance: Flattening/Arranging (extra)", type: "stepper", points: -100, max: 5 },
           { key: "human_fold_extra", label: "Human assistance during folding extra (max per item)", type: "stepper", points: -400, max: 5 },
           { key: "stack_folded", label: "Stacking folded clothes neatly (per item)", type: "stepper", points: 100, max: 6 },
+        ],
+      },
+      {
+        title: "Penalties",
+        items: [
+          { key: "human_env_changes_laundry", label: "Human assistance: environment changes (per item)", type: "checkbox", points: -40 },
         ],
       },
       {
@@ -296,16 +307,19 @@ export const TASKS: TaskDefinition[] = [
       {
         title: "Regular Rewards",
         items: [
-          { key: "detect_customer", label: "Detect calling or waving customer", type: "stepper", points: 100, max: 2 },
-          { key: "reach_table", label: "Reach a customer's table", type: "stepper", points: 100, max: 2 },
-          { key: "human_guided_table", label: "Human Assistance: Being guided to a table", type: "stepper", points: -100, max: 2 },
-          { key: "understand_order", label: "Understand and confirm the order received to the customer", type: "stepper", points: 200, max: 2 },
-          { key: "no_eye_contact", label: "Not making eye-contact when taking the order", type: "stepper", points: -80, max: 2 },
-          { key: "communicate_barman", label: "Communicate the order to the barman", type: "stepper", points: 100, max: 2 },
-          { key: "pick_items", label: "Picking up the requested items from the Kitchen-bar", type: "stepper", points: 200, max: 2 },
+          { key: "detect_customer", label: "Detect calling or waving customer", type: "stepper", points: 80, max: 2 },
+          { key: "reach_table", label: "Reach a customer's table", type: "stepper", points: 80, max: 2 },
+          { key: "human_guided_table", label: "Human Assistance: Being guided to a table", type: "stepper", points: -80, max: 2 },
+          { key: "understand_order", label: "Understand and confirm the order received to the customer", type: "stepper", points: 160, max: 2 },
+          { key: "alt_hri_order", label: "Alternative HRI", type: "stepper", points: -80, max: 2 },
+          { key: "no_eye_contact", label: "Not making eye-contact when taking the order", type: "stepper", points: -60, max: 2 },
+          { key: "communicate_barman", label: "Communicate the order to the barman", type: "stepper", points: 80, max: 2 },
+          { key: "pick_items", label: "Picking up the requested items from the Kitchen-bar", type: "stepper", points: 100, max: 4 },
+          { key: "first_pick_bonus", label: "First Pick Bonus", type: "checkbox", points: 100 },
           { key: "human_barman_handover", label: "Human assistance: Asking the Barman to handover object", type: "stepper", points: -100, max: 4 },
-          { key: "return_table", label: "Return to the customer table with the order", type: "stepper", points: 100, max: 2 },
-          { key: "serve_order", label: "Serve the order to the customer", type: "stepper", points: 200, max: 2 },
+          { key: "return_table", label: "Return to the customer table with the order", type: "stepper", points: 80, max: 2 },
+          { key: "serve_order", label: "Serve the order to the customer", type: "stepper", points: 100, max: 4 },
+          { key: "first_place_bonus", label: "First Place Bonus", type: "checkbox", points: 100 },
           { key: "human_guest_take", label: "Human assistance: Guest needing to take the object from tray or robot's hand", type: "stepper", points: -100, max: 4 },
         ],
       },
@@ -318,9 +332,9 @@ export const TASKS: TaskDefinition[] = [
       {
         title: "Penalties",
         items: [
-          { key: "not_reach_bar", label: "Not reaching the bar (barman has to move)", type: "stepper", points: -80, max: 2 },
-          { key: "human_direction", label: "Human Assistance: Asking for directional confirmation", type: "stepper", points: -40, max: 2 },
-          { key: "human_pointed", label: "Human Assistance: Being told/pointed where a table/Kitchen-bar is", type: "stepper", points: -50, max: 2 },
+          { key: "not_reach_bar", label: "Not reaching the bar (barman has to move)", type: "stepper", points: -60, max: 2 },
+          { key: "human_direction", label: "Human Assistance: Asking for directional confirmation", type: "stepper", points: -30, max: 2 },
+          { key: "human_pointed", label: "Human Assistance: Being told/pointed where a table/Kitchen-bar is", type: "stepper", points: -40, max: 2 },
         ],
       },
       {
@@ -357,7 +371,8 @@ export const TASKS: TaskDefinition[] = [
         title: "Specific Tasks",
         items: [
           { key: "open_door", label: "Opening the Door of the Apartment", type: "checkbox", points: 600 },
-          { key: "close_dishwasher", label: "Closing the Dishwasher", type: "checkbox", points: 600 },
+          { key: "close_dishwasher", label: "Closing the Dishwasher", type: "checkbox", points: 300 },
+          { key: "move_laundry_basket", label: "Moving the laundry basket", type: "checkbox", points: 600 },
         ],
       },
       {
