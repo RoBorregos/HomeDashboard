@@ -78,7 +78,7 @@ export const TASKS: TaskDefinition[] = [
     id: "hri",
     name: "Human Robot Interaction",
     maxScore: 1450,
-    timeLimit: "6:00",
+    timeLimit: "7:00",
     sections: [
       {
         title: "Main Goal",
@@ -290,7 +290,7 @@ export const TASKS: TaskDefinition[] = [
   {
     id: "restaurant",
     name: "Restaurant",
-    maxScore: 2400,
+    maxScore: 2360,
     timeLimit: "15:00",
     sections: [
       {
@@ -328,7 +328,7 @@ export const TASKS: TaskDefinition[] = [
         items: [
           { key: "not_attending", label: "Not attending", type: "checkbox", points: -500 },
           { key: "alt_start_signal", label: "Using alternative start signal", type: "checkbox", points: -100 },
-          { key: "outstanding", label: "Outstanding performance", type: "checkbox", points: 240 },
+          { key: "outstanding", label: "Outstanding performance", type: "checkbox", points: 236 },
         ],
       },
     ],
@@ -338,7 +338,7 @@ export const TASKS: TaskDefinition[] = [
   {
     id: "finals",
     name: "Finals",
-    maxScore: 8150,
+    maxScore: 8450,
     timeLimit: "10:00",
     sections: [
       {
