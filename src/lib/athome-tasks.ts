@@ -188,7 +188,8 @@ export const TASKS: TaskDefinition[] = [
           { key: "spill_pouring", label: "Spilling cereal and milk while pouring", type: "stepper", points: -100, max: 2 },
           { key: "human_reposition", label: "Human assistance: object repositioned by a person", type: "stepper", points: -30, max: 12 },
           { key: "human_handover", label: "Human assistance: handover", type: "stepper", points: -100, max: 24 },
-          { key: "human_env_changes", label: "Human assistance: environment changes (per item)", type: "checkbox", points: -40 },
+
+          { key: "human_env_changes", label: "Human assistance: environment changes (per item)", type: "stepper", points: -40, max: 12 },
           { key: "human_open_milk", label: "Human assistance: opening milk container", type: "checkbox", points: 0 },
           { key: "human_dishwasher_move", label: "Human assistance: moving dishwasher door or rack", type: "checkbox", points: 0 },
         ],
@@ -283,7 +284,7 @@ export const TASKS: TaskDefinition[] = [
       {
         title: "Penalties",
         items: [
-          { key: "human_env_changes_laundry", label: "Human assistance: environment changes (per item)", type: "checkbox", points: -40 },
+          { key: "human_env_changes_laundry", label: "Human assistance: environment changes (per item)", type: "stepper", points: -40, max: 12 },
         ],
       },
       {
